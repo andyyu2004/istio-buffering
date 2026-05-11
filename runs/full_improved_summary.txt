@@ -1,0 +1,19 @@
+----- envoy_http2_pending_send_bytes -----
+  pod=istio-waypoint-5488d8856d-89495 cluster=: max=56927
+----- envoy_cluster_http2_pending_send_bytes{cluster_name!~"prometheus_stats|.*grpc|agent"} -----
+  pod=istio-gateway-istio-7774ddb4db-v28cc cluster=connect_originate: max=0
+  pod=istio-waypoint-5488d8856d-89495 cluster=connect_originate: max=0
+----- sum by (pod) (envoy_tcp_downstream_cx_tx_bytes_buffered) -----
+  pod=istio-gateway-istio-7774ddb4db-v28cc cluster=: max=1107302
+  pod=istio-waypoint-5488d8856d-89495 cluster=: max=97823
+----- sum by (pod) (envoy_cluster_upstream_cx_rx_bytes_buffered{cluster_name!~"prometheus_stats|.*grpc|agent"}) -----
+  pod=istio-gateway-istio-7774ddb4db-v28cc cluster=: max=47018
+  pod=istio-waypoint-5488d8856d-89495 cluster=: max=229399
+----- envoy_server_memory_allocated -----
+  pod=istio-gateway-istio-7774ddb4db-v28cc cluster=: max=9035000
+  pod=istio-waypoint-5488d8856d-89495 cluster=: max=7688176
+----- sum by (pod) (envoy_cluster_upstream_flow_control_paused_reading_total{cluster_name!~"prometheus_stats|.*grpc|agent"} - envoy_cluster_upstream_flow_control_resumed_reading_total{cluster_name!~"prometheus_stats|.*grpc|agent"}) -----
+  pod=istio-gateway-istio-7774ddb4db-v28cc cluster=: max=2
+  pod=istio-waypoint-5488d8856d-89495 cluster=: max=3
+----- container_memory_working_set_bytes{namespace="istio-system",pod=~"ztunnel-.*",container="istio-proxy"} -----
+  pod=ztunnel-69v4x cluster=: max=10072064

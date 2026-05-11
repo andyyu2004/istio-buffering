@@ -1,0 +1,14 @@
+----- envoy_http2_pending_send_bytes -----
+  pod=istio-waypoint-68c665ff69-hhrbl: max=74470
+----- sum by (pod) (envoy_tcp_downstream_cx_tx_bytes_buffered) -----
+  pod=istio-gateway-istio-656744c55f-xnj66: max=1551090
+  pod=istio-waypoint-68c665ff69-hhrbl: max=82030
+----- sum by (pod) (envoy_cluster_upstream_cx_rx_bytes_buffered{cluster_name!~"prometheus_stats|.*grpc|agent"}) -----
+  pod=istio-gateway-istio-656744c55f-xnj66: max=40337
+  pod=istio-waypoint-68c665ff69-hhrbl: max=49213
+----- envoy_server_memory_allocated -----
+  pod=istio-gateway-istio-656744c55f-xnj66: max=36933056
+  pod=istio-waypoint-68c665ff69-hhrbl: max=18097224
+----- sum by (pod) (envoy_cluster_upstream_flow_control_paused_reading_total{cluster_name!~"prometheus_stats|.*grpc|agent"} - envoy_cluster_upstream_flow_control_resumed_reading_total{cluster_name!~"prometheus_stats|.*grpc|agent"}) -----
+  pod=istio-gateway-istio-656744c55f-xnj66: max=2
+  pod=istio-waypoint-68c665ff69-hhrbl: max=3

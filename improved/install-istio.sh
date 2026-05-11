@@ -40,3 +40,4 @@ kubectl apply -f gateway-and-waypoint.yaml
 # istioctl pc log -n istio-waypoint deploy/istio-waypoint --level trace
 
 kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.29/samples/addons/prometheus.yaml
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.29/samples/addons/kiali.yaml
