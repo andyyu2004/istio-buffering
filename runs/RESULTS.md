@@ -64,3 +64,61 @@ istioctl pc cluster -n istio-gateway deploy/istio-gateway-istio --fqdn connect_o
 - `connect_originate` listener on gateway has no `per_connection_buffer_limit_bytes` (EnvoyFilter context match doesn't catch it). Worth fixing — the listener-side buffer can still hold data.
 - Waypoint listeners don't accept `TCP_NOTSENT_LOWAT` (Envoy rejects socket option on internal listeners).
 - Step 5 was tested with waypoint *bypassed*. Should re-run with waypoint in path to confirm the full Polling-Tentacle scenario, since production has the waypoint inline.
+
+---
+
+# Follow-up: which improvement matters most? (automated sweep, waypoint in path)
+
+Driven by `runs/sweep.py` — automated curl + Prometheus metric capture across configs.
+
+Primary metric: `sum(istio_tcp_sent_bytes_total{reporter="destination",destination_app="caddy-server",pod=<current ztunnel>})` delta over the 30s curl window. This is the bytes Caddy's response payload contributed, as reported by the destination ztunnel — the moral equivalent of what tcpdump on the Caddy pod would see emitted by Caddy on its TLS socket.
+
+Cross-check: `envoy_cluster_upstream_cx_rx_bytes_total{cluster_name="connect_originate", pod=<current gateway>}` — bytes the gateway received over HBONE.
+
+Filtering by current pod name handles counter resets across configs (pods restart between rows).
+
+## Per-improvement isolation
+
+All rows have **waypoint in path** (production scenario). Numbers are the byte delta over a single 30s curl run with `--limit-rate 125k --http1.1`.
+
+| Config | Caddy emitted | Gateway HBONE recv | Reduction vs baseline |
+|---|---|---|---|
+| Baseline (no improvements) | **72.06 MB** | 38.44 MB | — |
+| All 3 improvements | **24.09 MB** | 16.60 MB | **−67%** |
+| Pilot HBONE envvars *only* | **28.28 MB** | 17.60 MB | **−61%** |
+| ztunnel HTTP/2 envvars *only* | 72.00 MB | 40.04 MB | 0% |
+| EnvoyFilters *only* | 62.85 MB | 32.03 MB | −13% |
+
+## Headline finding
+
+**`PILOT_HBONE_INITIAL_STREAM_WINDOW_SIZE` and `PILOT_HBONE_INITIAL_CONNECTION_WINDOW_SIZE` alone deliver ~91% of the total improvement** (44 MB cut out of the 48 MB delta between baseline and full stack).
+
+The other two improvements move buffering around but don't shrink the total when the gateway's HBONE H/2 receive window is left at Envoy's default (256 MB-ish):
+
+- **ztunnel envvars in isolation look like a no-op for caddy-side bytes** — but they do empty the *waypoint*'s H/2 send buffer (16.8 MB → 74 KB, observed earlier). Buffering simply shifts to the gateway, which still accepts it.
+- **EnvoyFilters in isolation** cap listener-level buffers but don't constrain the H/2 receive window, so most of the in-flight bytes still flow through.
+
+## Implications for rolling out to production (HostedScripts)
+
+1. The **must-have** change is the istiod pilot env vars from PR `istio/istio#59979` (on `release-1.29`, shipping in `1.29.3`):
+   - `PILOT_HBONE_INITIAL_STREAM_WINDOW_SIZE=65535`
+   - `PILOT_HBONE_INITIAL_CONNECTION_WINDOW_SIZE=262140`
+2. ztunnel envvars + EnvoyFilters are **nice-to-have**: they tidy up buffering at other layers (waypoint memory, kernel TCP send buffer on the gateway) but contribute only the marginal last ~4 MB once the pilot envvars are in place.
+3. The current `improved/README.md` recommends them in the order *EnvoyFilters → ztunnel windows → HBONE windows*. **The actual priority is the reverse** — HBONE pilot envvars first, the others second.
+4. The README references these as `hboneInitial*WindowSize` meshConfig fields. **That surface doesn't exist in pilot** — only the env vars do. The meshConfig path silently no-ops. Worth updating the README or pursuing the istio/api PR to add the meshConfig surface.
+
+## Measurement notes
+
+- Envoy proto-validates `InitialStreamWindowSize ∈ [65535, 2^31-1]`. Anything below 64 KB minus 1 is rejected and the gateway pod fails to become ready. The 64 KB / 256 KB pair from the README is at the minimum.
+- The original READMEs's Wireshark "first-burst" of ~73 MB matches our automated metric (72.06 MB) within run-to-run variance — even though Wireshark counts TLS framing + ACKs that ztunnel's counters don't.
+- Counter handling: pod restarts between configs reset `istio_tcp_sent_bytes_total`. The sweep filters by current pod name (resolved after `reset.sh`) to avoid summing in stale series from previous configs.
+
+## Replicate
+
+```fish
+# matrix lives at runs/sweep.py
+python3 runs/sweep.py --list   # see configs
+python3 runs/sweep.py          # run (writes runs/sweep.csv incrementally)
+```
+
+Resume-friendly: if `runs/sweep.csv` already has a row for a config (by name), the sweep skips it. Delete the CSV to start fresh.

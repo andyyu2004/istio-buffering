@@ -1,0 +1,55 @@
+
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: buffer-limits-final
+  namespace: istio-gateway
+spec:
+  configPatches:
+    - applyTo: LISTENER
+      match:
+        context: ANY
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 32768
+          socket_options:
+            - description: "TCP_NOTSENT_LOWAT=16384"
+              level: 6
+              name: 25
+              int_value: 16384
+              state: STATE_LISTENING
+
+    - applyTo: CLUSTER
+      match:
+        context: ANY
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 32768
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: buffer-limits-final
+  namespace: istio-waypoint
+spec:
+  targetRefs:
+    - kind: Gateway
+      name: istio-waypoint
+      group: gateway.networking.k8s.io
+  configPatches:
+    - applyTo: LISTENER
+      match:
+        context: ANY
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 32768
+    - applyTo: CLUSTER
+      match:
+        context: ANY
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 32768

@@ -1,0 +1,707 @@
+gateway port: 32768
+
+=== 00_baseline ===
+  $ helm upgrade istiod istio/istiod --version 1.29.1 -n istio-system --values /Users/andyyu/dev/istio-buffering/improved/istiod-values.yaml --set image=istiolocal/pilot:latest --set global.hub=istiolocal --set global.tag=latest --set global.imagePullPolicy=IfNotPresent --kube-context kind-kind --wait --timeout 3m
+Release "istiod" has been upgraded. Happy Helming!
+NAME: istiod
+LAST DEPLOYED: Mon May 11 22:39:04 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 30
+TEST SUITE: None
+NOTES:
+"istiod" successfully installed!
+
+To learn more about the release, try:
+  $ helm status istiod -n istio-system
+  $ helm get all istiod -n istio-system
+
+Next steps:
+  * Get started with ambient: https://istio.io/latest/docs/ops/ambient/getting-started/
+  * Review ambient's architecture: https://istio.io/latest/docs/ops/ambient/architecture/
+  * Review the list of actively supported releases, CVE publications and our hardening guide:
+    * https://istio.io/latest/docs/releases/supported-releases/
+    * https://istio.io/latest/news/security/
+    * https://istio.io/latest/docs/ops/best-practices/security/
+
+For further documentation see https://istio.io website
+  waiting for istiod validation webhook to be ready
+  WARN: webhook still not happy after 60s, proceeding anyway
+  $ helm upgrade ztunnel istio/ztunnel --version 1.29.1 -n istio-system --kube-context kind-kind --wait --timeout 2m
+Release "ztunnel" has been upgraded. Happy Helming!
+NAME: ztunnel
+LAST DEPLOYED: Mon May 11 22:40:12 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 16
+TEST SUITE: None
+NOTES:
+ztunnel successfully installed!
+
+To learn more about the release, try:
+  $ helm status ztunnel -n istio-system
+  $ helm get all ztunnel -n istio-system
+  $ kubectl --context kind-kind label svc -n caddy caddy-service istio.io/ingress-use-waypoint=true --overwrite
+service/caddy-service not labeled
+  $ kubectl --context kind-kind delete envoyfilter -n istio-gateway buffer-limits-final --ignore-not-found
+  $ kubectl --context kind-kind delete envoyfilter -n istio-waypoint buffer-limits-final --ignore-not-found
+  $ kubectl --context kind-kind rollout restart -n istio-system daemonset/ztunnel
+daemonset.apps/ztunnel restarted
+  $ kubectl --context kind-kind rollout restart -n istio-gateway deployment/istio-gateway-istio
+deployment.apps/istio-gateway-istio restarted
+  $ kubectl --context kind-kind rollout restart -n istio-waypoint deployment/istio-waypoint
+deployment.apps/istio-waypoint restarted
+  $ kubectl --context kind-kind rollout status -n istio-gateway deployment/istio-gateway-istio --timeout=120s
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+deployment "istio-gateway-istio" successfully rolled out
+  $ kubectl --context kind-kind rollout status -n istio-waypoint deployment/istio-waypoint --timeout=120s
+deployment "istio-waypoint" successfully rolled out
+  $ kubectl --context kind-kind rollout status -n istio-system daemonset/ztunnel --timeout=120s
+Waiting for daemon set "ztunnel" rollout to finish: 0 out of 1 new pods have been updated...
+daemon set "ztunnel" successfully rolled out
+  settling 25s
+  pods: {'ztunnel': 'ztunnel-l27g5', 'gateway': 'istio-gateway-istio-6f796c67b9-drmgk', 'waypoint': 'istio-waypoint-c4dcf47d9-bjgdf'}
+  curl start @ 1778496044
+  curl done @ 1778496074 (received 3850240 bytes)
+  settling 25s for prometheus scrape
+  received        = 3.67 MB
+  emitted (total) = 72.06 MB
+  first-burst 10s = 37.97 MB  <-- caddy-side
+  gw_hbone_rx     = 38.44 MB  <-- gateway recv via HBONE
+  buffered at end = 68.38 MB
+  gw_mem_peak     = 32.98 MB
+  wp_mem_peak     = 50.61 MB
+  ztunnel_peak    = 12.77 MB
+  h2_pending_peak = 16.05 MB
+
+=== 01_all_improvements ===
+  $ helm upgrade istiod istio/istiod --version 1.29.1 -n istio-system --values /Users/andyyu/dev/istio-buffering/improved/istiod-values.yaml --set image=istiolocal/pilot:latest --set global.hub=istiolocal --set global.tag=latest --set global.imagePullPolicy=IfNotPresent --kube-context kind-kind --wait --timeout 3m --set pilot.env.PILOT_HBONE_INITIAL_STREAM_WINDOW_SIZE=65535 --set pilot.env.PILOT_HBONE_INITIAL_CONNECTION_WINDOW_SIZE=262140
+Release "istiod" has been upgraded. Happy Helming!
+NAME: istiod
+LAST DEPLOYED: Mon May 11 22:41:40 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 31
+TEST SUITE: None
+NOTES:
+"istiod" successfully installed!
+
+To learn more about the release, try:
+  $ helm status istiod -n istio-system
+  $ helm get all istiod -n istio-system
+
+Next steps:
+  * Get started with ambient: https://istio.io/latest/docs/ops/ambient/getting-started/
+  * Review ambient's architecture: https://istio.io/latest/docs/ops/ambient/architecture/
+  * Review the list of actively supported releases, CVE publications and our hardening guide:
+    * https://istio.io/latest/docs/releases/supported-releases/
+    * https://istio.io/latest/news/security/
+    * https://istio.io/latest/docs/ops/best-practices/security/
+
+For further documentation see https://istio.io website
+  waiting for istiod validation webhook to be ready
+  WARN: webhook still not happy after 60s, proceeding anyway
+  $ helm upgrade ztunnel istio/ztunnel --version 1.29.1 -n istio-system --kube-context kind-kind --wait --timeout 2m --set meshConfig.defaultConfig.proxyMetadata.HTTP2_STREAM_WINDOW_SIZE=65535 --set meshConfig.defaultConfig.proxyMetadata.HTTP2_CONNECTION_WINDOW_SIZE=262140 --set meshConfig.defaultConfig.proxyMetadata.HTTP2_FRAME_SIZE=16384
+Release "ztunnel" has been upgraded. Happy Helming!
+NAME: ztunnel
+LAST DEPLOYED: Mon May 11 22:42:46 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 17
+TEST SUITE: None
+NOTES:
+ztunnel successfully installed!
+
+To learn more about the release, try:
+  $ helm status ztunnel -n istio-system
+  $ helm get all ztunnel -n istio-system
+  $ kubectl --context kind-kind label svc -n caddy caddy-service istio.io/ingress-use-waypoint=true --overwrite
+service/caddy-service not labeled
+  $ kubectl --context kind-kind apply -f /Users/andyyu/dev/istio-buffering/runs/_envoyfilter.yaml
+Warning: EnvoyFilter exposes internal implementation details that may change at any time. Prefer other APIs if possible, and exercise extreme caution, especially around upgrades.
+envoyfilter.networking.istio.io/buffer-limits-final created
+envoyfilter.networking.istio.io/buffer-limits-final created
+  $ kubectl --context kind-kind rollout restart -n istio-system daemonset/ztunnel
+daemonset.apps/ztunnel restarted
+  $ kubectl --context kind-kind rollout restart -n istio-gateway deployment/istio-gateway-istio
+deployment.apps/istio-gateway-istio restarted
+  $ kubectl --context kind-kind rollout restart -n istio-waypoint deployment/istio-waypoint
+deployment.apps/istio-waypoint restarted
+  $ kubectl --context kind-kind rollout status -n istio-gateway deployment/istio-gateway-istio --timeout=120s
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+deployment "istio-gateway-istio" successfully rolled out
+  $ kubectl --context kind-kind rollout status -n istio-waypoint deployment/istio-waypoint --timeout=120s
+deployment "istio-waypoint" successfully rolled out
+  $ kubectl --context kind-kind rollout status -n istio-system daemonset/ztunnel --timeout=120s
+Waiting for daemon set "ztunnel" rollout to finish: 0 out of 1 new pods have been updated...
+daemon set "ztunnel" successfully rolled out
+  settling 25s
+  pods: {'ztunnel': 'ztunnel-t8l9f', 'gateway': 'istio-gateway-istio-6bc6bcfd94-xrt8h', 'waypoint': 'istio-waypoint-7f9c664748-z64ng'}
+  curl start @ 1778496199
+  curl done @ 1778496229 (received 3850240 bytes)
+  settling 25s for prometheus scrape
+  received        = 3.67 MB
+  emitted (total) = 24.09 MB
+  first-burst 10s = 24.09 MB  <-- caddy-side
+  gw_hbone_rx     = 16.60 MB  <-- gateway recv via HBONE
+  buffered at end = 20.42 MB
+  gw_mem_peak     = 8.48 MB
+  wp_mem_peak     = 24.16 MB
+  ztunnel_peak    = 10.06 MB
+  h2_pending_peak = 16.04 MB
+
+=== 02_only_pilot_envvars ===
+  $ helm upgrade istiod istio/istiod --version 1.29.1 -n istio-system --values /Users/andyyu/dev/istio-buffering/improved/istiod-values.yaml --set image=istiolocal/pilot:latest --set global.hub=istiolocal --set global.tag=latest --set global.imagePullPolicy=IfNotPresent --kube-context kind-kind --wait --timeout 3m --set pilot.env.PILOT_HBONE_INITIAL_STREAM_WINDOW_SIZE=65535 --set pilot.env.PILOT_HBONE_INITIAL_CONNECTION_WINDOW_SIZE=262140
+Release "istiod" has been upgraded. Happy Helming!
+NAME: istiod
+LAST DEPLOYED: Mon May 11 22:44:14 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 32
+TEST SUITE: None
+NOTES:
+"istiod" successfully installed!
+
+To learn more about the release, try:
+  $ helm status istiod -n istio-system
+  $ helm get all istiod -n istio-system
+
+Next steps:
+  * Get started with ambient: https://istio.io/latest/docs/ops/ambient/getting-started/
+  * Review ambient's architecture: https://istio.io/latest/docs/ops/ambient/architecture/
+  * Review the list of actively supported releases, CVE publications and our hardening guide:
+    * https://istio.io/latest/docs/releases/supported-releases/
+    * https://istio.io/latest/news/security/
+    * https://istio.io/latest/docs/ops/best-practices/security/
+
+For further documentation see https://istio.io website
+  waiting for istiod validation webhook to be ready
+  WARN: webhook still not happy after 60s, proceeding anyway
+  $ helm upgrade ztunnel istio/ztunnel --version 1.29.1 -n istio-system --kube-context kind-kind --wait --timeout 2m
+Release "ztunnel" has been upgraded. Happy Helming!
+NAME: ztunnel
+LAST DEPLOYED: Mon May 11 22:45:18 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 18
+TEST SUITE: None
+NOTES:
+ztunnel successfully installed!
+
+To learn more about the release, try:
+  $ helm status ztunnel -n istio-system
+  $ helm get all ztunnel -n istio-system
+  $ kubectl --context kind-kind label svc -n caddy caddy-service istio.io/ingress-use-waypoint=true --overwrite
+service/caddy-service not labeled
+  $ kubectl --context kind-kind delete envoyfilter -n istio-gateway buffer-limits-final --ignore-not-found
+envoyfilter.networking.istio.io "buffer-limits-final" deleted from istio-gateway namespace
+  $ kubectl --context kind-kind delete envoyfilter -n istio-waypoint buffer-limits-final --ignore-not-found
+envoyfilter.networking.istio.io "buffer-limits-final" deleted from istio-waypoint namespace
+  $ kubectl --context kind-kind rollout restart -n istio-system daemonset/ztunnel
+daemonset.apps/ztunnel restarted
+  $ kubectl --context kind-kind rollout restart -n istio-gateway deployment/istio-gateway-istio
+deployment.apps/istio-gateway-istio restarted
+  $ kubectl --context kind-kind rollout restart -n istio-waypoint deployment/istio-waypoint
+deployment.apps/istio-waypoint restarted
+  $ kubectl --context kind-kind rollout status -n istio-gateway deployment/istio-gateway-istio --timeout=120s
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+deployment "istio-gateway-istio" successfully rolled out
+  $ kubectl --context kind-kind rollout status -n istio-waypoint deployment/istio-waypoint --timeout=120s
+deployment "istio-waypoint" successfully rolled out
+  $ kubectl --context kind-kind rollout status -n istio-system daemonset/ztunnel --timeout=120s
+Waiting for daemon set "ztunnel" rollout to finish: 0 out of 1 new pods have been updated...
+daemon set "ztunnel" successfully rolled out
+  settling 25s
+  pods: {'ztunnel': 'ztunnel-xk2w5', 'gateway': 'istio-gateway-istio-5d775c666f-dspm6', 'waypoint': 'istio-waypoint-5b6f5b7449-lk9k2'}
+  curl start @ 1778496351
+  curl done @ 1778496382 (received 3850240 bytes)
+  settling 25s for prometheus scrape
+  received        = 3.67 MB
+  emitted (total) = 28.28 MB
+  first-burst 10s = ?  <-- caddy-side
+  gw_hbone_rx     = 17.60 MB  <-- gateway recv via HBONE
+  buffered at end = 24.61 MB
+  gw_mem_peak     = 9.50 MB
+  wp_mem_peak     = 25.84 MB
+  ztunnel_peak    = 10.64 MB
+  h2_pending_peak = 15.08 MB
+
+=== 03_only_ztunnel_envvars ===
+  $ helm upgrade istiod istio/istiod --version 1.29.1 -n istio-system --values /Users/andyyu/dev/istio-buffering/improved/istiod-values.yaml --set image=istiolocal/pilot:latest --set global.hub=istiolocal --set global.tag=latest --set global.imagePullPolicy=IfNotPresent --kube-context kind-kind --wait --timeout 3m
+Release "istiod" has been upgraded. Happy Helming!
+NAME: istiod
+LAST DEPLOYED: Mon May 11 22:46:47 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 33
+TEST SUITE: None
+NOTES:
+"istiod" successfully installed!
+
+To learn more about the release, try:
+  $ helm status istiod -n istio-system
+  $ helm get all istiod -n istio-system
+
+Next steps:
+  * Get started with ambient: https://istio.io/latest/docs/ops/ambient/getting-started/
+  * Review ambient's architecture: https://istio.io/latest/docs/ops/ambient/architecture/
+  * Review the list of actively supported releases, CVE publications and our hardening guide:
+    * https://istio.io/latest/docs/releases/supported-releases/
+    * https://istio.io/latest/news/security/
+    * https://istio.io/latest/docs/ops/best-practices/security/
+
+For further documentation see https://istio.io website
+  waiting for istiod validation webhook to be ready
+  WARN: webhook still not happy after 60s, proceeding anyway
+  $ helm upgrade ztunnel istio/ztunnel --version 1.29.1 -n istio-system --kube-context kind-kind --wait --timeout 2m --set meshConfig.defaultConfig.proxyMetadata.HTTP2_STREAM_WINDOW_SIZE=65535 --set meshConfig.defaultConfig.proxyMetadata.HTTP2_CONNECTION_WINDOW_SIZE=262140 --set meshConfig.defaultConfig.proxyMetadata.HTTP2_FRAME_SIZE=16384
+Release "ztunnel" has been upgraded. Happy Helming!
+NAME: ztunnel
+LAST DEPLOYED: Mon May 11 22:47:53 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 19
+TEST SUITE: None
+NOTES:
+ztunnel successfully installed!
+
+To learn more about the release, try:
+  $ helm status ztunnel -n istio-system
+  $ helm get all ztunnel -n istio-system
+  $ kubectl --context kind-kind label svc -n caddy caddy-service istio.io/ingress-use-waypoint=true --overwrite
+service/caddy-service not labeled
+  $ kubectl --context kind-kind delete envoyfilter -n istio-gateway buffer-limits-final --ignore-not-found
+  $ kubectl --context kind-kind delete envoyfilter -n istio-waypoint buffer-limits-final --ignore-not-found
+  $ kubectl --context kind-kind rollout restart -n istio-system daemonset/ztunnel
+daemonset.apps/ztunnel restarted
+  $ kubectl --context kind-kind rollout restart -n istio-gateway deployment/istio-gateway-istio
+deployment.apps/istio-gateway-istio restarted
+  $ kubectl --context kind-kind rollout restart -n istio-waypoint deployment/istio-waypoint
+deployment.apps/istio-waypoint restarted
+  $ kubectl --context kind-kind rollout status -n istio-gateway deployment/istio-gateway-istio --timeout=120s
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+deployment "istio-gateway-istio" successfully rolled out
+  $ kubectl --context kind-kind rollout status -n istio-waypoint deployment/istio-waypoint --timeout=120s
+deployment "istio-waypoint" successfully rolled out
+  $ kubectl --context kind-kind rollout status -n istio-system daemonset/ztunnel --timeout=120s
+Waiting for daemon set "ztunnel" rollout to finish: 0 out of 1 new pods have been updated...
+daemon set "ztunnel" successfully rolled out
+  settling 25s
+  pods: {'ztunnel': 'ztunnel-r9jsv', 'gateway': 'istio-gateway-istio-7f9c6b9497-rg7tb', 'waypoint': 'istio-waypoint-78dfb6c8b9-gt9w7'}
+  curl start @ 1778496505
+  curl done @ 1778496535 (received 3850240 bytes)
+  settling 25s for prometheus scrape
+  received        = 3.67 MB
+  emitted (total) = 72.00 MB
+  first-burst 10s = ?  <-- caddy-side
+  gw_hbone_rx     = 40.04 MB  <-- gateway recv via HBONE
+  buffered at end = 68.33 MB
+  gw_mem_peak     = 31.17 MB
+  wp_mem_peak     = 44.64 MB
+  ztunnel_peak    = 13.46 MB
+  h2_pending_peak = 16.01 MB
+
+=== 04_only_envoyfilters ===
+  $ helm upgrade istiod istio/istiod --version 1.29.1 -n istio-system --values /Users/andyyu/dev/istio-buffering/improved/istiod-values.yaml --set image=istiolocal/pilot:latest --set global.hub=istiolocal --set global.tag=latest --set global.imagePullPolicy=IfNotPresent --kube-context kind-kind --wait --timeout 3m
+Release "istiod" has been upgraded. Happy Helming!
+NAME: istiod
+LAST DEPLOYED: Mon May 11 22:49:21 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 34
+TEST SUITE: None
+NOTES:
+"istiod" successfully installed!
+
+To learn more about the release, try:
+  $ helm status istiod -n istio-system
+  $ helm get all istiod -n istio-system
+
+Next steps:
+  * Get started with ambient: https://istio.io/latest/docs/ops/ambient/getting-started/
+  * Review ambient's architecture: https://istio.io/latest/docs/ops/ambient/architecture/
+  * Review the list of actively supported releases, CVE publications and our hardening guide:
+    * https://istio.io/latest/docs/releases/supported-releases/
+    * https://istio.io/latest/news/security/
+    * https://istio.io/latest/docs/ops/best-practices/security/
+
+For further documentation see https://istio.io website
+  waiting for istiod validation webhook to be ready
+  WARN: webhook still not happy after 60s, proceeding anyway
+  $ helm upgrade ztunnel istio/ztunnel --version 1.29.1 -n istio-system --kube-context kind-kind --wait --timeout 2m
+Release "ztunnel" has been upgraded. Happy Helming!
+NAME: ztunnel
+LAST DEPLOYED: Mon May 11 22:50:24 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 20
+TEST SUITE: None
+NOTES:
+ztunnel successfully installed!
+
+To learn more about the release, try:
+  $ helm status ztunnel -n istio-system
+  $ helm get all ztunnel -n istio-system
+  $ kubectl --context kind-kind label svc -n caddy caddy-service istio.io/ingress-use-waypoint=true --overwrite
+service/caddy-service not labeled
+  $ kubectl --context kind-kind apply -f /Users/andyyu/dev/istio-buffering/runs/_envoyfilter.yaml
+Warning: EnvoyFilter exposes internal implementation details that may change at any time. Prefer other APIs if possible, and exercise extreme caution, especially around upgrades.
+envoyfilter.networking.istio.io/buffer-limits-final created
+envoyfilter.networking.istio.io/buffer-limits-final created
+  $ kubectl --context kind-kind rollout restart -n istio-system daemonset/ztunnel
+daemonset.apps/ztunnel restarted
+  $ kubectl --context kind-kind rollout restart -n istio-gateway deployment/istio-gateway-istio
+deployment.apps/istio-gateway-istio restarted
+  $ kubectl --context kind-kind rollout restart -n istio-waypoint deployment/istio-waypoint
+deployment.apps/istio-waypoint restarted
+  $ kubectl --context kind-kind rollout status -n istio-gateway deployment/istio-gateway-istio --timeout=120s
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+deployment "istio-gateway-istio" successfully rolled out
+  $ kubectl --context kind-kind rollout status -n istio-waypoint deployment/istio-waypoint --timeout=120s
+Waiting for deployment "istio-waypoint" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "istio-waypoint" rollout to finish: 1 old replicas are pending termination...
+deployment "istio-waypoint" successfully rolled out
+  $ kubectl --context kind-kind rollout status -n istio-system daemonset/ztunnel --timeout=120s
+Waiting for daemon set "ztunnel" rollout to finish: 0 out of 1 new pods have been updated...
+daemon set "ztunnel" successfully rolled out
+  settling 25s
+  pods: {'ztunnel': 'ztunnel-h5wcd', 'gateway': 'istio-gateway-istio-75c8cf9c96-bfd59', 'waypoint': 'istio-waypoint-59c6f674cd-4qtr7'}
+  curl start @ 1778496659
+  curl done @ 1778496689 (received 3850240 bytes)
+  settling 25s for prometheus scrape
+  received        = 3.67 MB
+  emitted (total) = 62.85 MB
+  first-burst 10s = ?  <-- caddy-side
+  gw_hbone_rx     = 32.03 MB  <-- gateway recv via HBONE
+  buffered at end = 59.17 MB
+  gw_mem_peak     = 28.38 MB
+  wp_mem_peak     = 41.07 MB
+  ztunnel_peak    = 10.05 MB
+  h2_pending_peak = 16.00 MB
+
+=== 05_pilot_win_16k ===
+  $ helm upgrade istiod istio/istiod --version 1.29.1 -n istio-system --values /Users/andyyu/dev/istio-buffering/improved/istiod-values.yaml --set image=istiolocal/pilot:latest --set global.hub=istiolocal --set global.tag=latest --set global.imagePullPolicy=IfNotPresent --kube-context kind-kind --wait --timeout 3m --set pilot.env.PILOT_HBONE_INITIAL_STREAM_WINDOW_SIZE=16383 --set pilot.env.PILOT_HBONE_INITIAL_CONNECTION_WINDOW_SIZE=65532
+Release "istiod" has been upgraded. Happy Helming!
+NAME: istiod
+LAST DEPLOYED: Mon May 11 22:51:54 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 35
+TEST SUITE: None
+NOTES:
+"istiod" successfully installed!
+
+To learn more about the release, try:
+  $ helm status istiod -n istio-system
+  $ helm get all istiod -n istio-system
+
+Next steps:
+  * Get started with ambient: https://istio.io/latest/docs/ops/ambient/getting-started/
+  * Review ambient's architecture: https://istio.io/latest/docs/ops/ambient/architecture/
+  * Review the list of actively supported releases, CVE publications and our hardening guide:
+    * https://istio.io/latest/docs/releases/supported-releases/
+    * https://istio.io/latest/news/security/
+    * https://istio.io/latest/docs/ops/best-practices/security/
+
+For further documentation see https://istio.io website
+  waiting for istiod validation webhook to be ready
+  WARN: webhook still not happy after 60s, proceeding anyway
+  $ helm upgrade ztunnel istio/ztunnel --version 1.29.1 -n istio-system --kube-context kind-kind --wait --timeout 2m --set meshConfig.defaultConfig.proxyMetadata.HTTP2_STREAM_WINDOW_SIZE=65535 --set meshConfig.defaultConfig.proxyMetadata.HTTP2_CONNECTION_WINDOW_SIZE=262140 --set meshConfig.defaultConfig.proxyMetadata.HTTP2_FRAME_SIZE=16384
+Release "ztunnel" has been upgraded. Happy Helming!
+NAME: ztunnel
+LAST DEPLOYED: Mon May 11 22:53:00 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 21
+TEST SUITE: None
+NOTES:
+ztunnel successfully installed!
+
+To learn more about the release, try:
+  $ helm status ztunnel -n istio-system
+  $ helm get all ztunnel -n istio-system
+  $ kubectl --context kind-kind label svc -n caddy caddy-service istio.io/ingress-use-waypoint=true --overwrite
+service/caddy-service not labeled
+  $ kubectl --context kind-kind apply -f /Users/andyyu/dev/istio-buffering/runs/_envoyfilter.yaml
+envoyfilter.networking.istio.io/buffer-limits-final unchanged
+envoyfilter.networking.istio.io/buffer-limits-final unchanged
+  $ kubectl --context kind-kind rollout restart -n istio-system daemonset/ztunnel
+daemonset.apps/ztunnel restarted
+  $ kubectl --context kind-kind rollout restart -n istio-gateway deployment/istio-gateway-istio
+deployment.apps/istio-gateway-istio restarted
+  $ kubectl --context kind-kind rollout restart -n istio-waypoint deployment/istio-waypoint
+deployment.apps/istio-waypoint restarted
+  $ kubectl --context kind-kind rollout status -n istio-gateway deployment/istio-gateway-istio --timeout=120s
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment spec update to be observed...
+Waiting for deployment spec update to be observed...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+error: timed out waiting for the condition
+l.imagePullPolicy=IfNotPresent --kube-context kind-kind --wait --timeout 3m --set pilot.env.PILOT_HBONE_INITIAL_STREAM_WINDOW_SIZE=16383 --set pilot.env.PILOT_HBONE_INITIAL_CONNECTION_WINDOW_SIZE=65532
+Release "istiod" has been upgraded. Happy Helming!
+NAME: istiod
+LAST DEPLOYED: Mon May 11 22:54:40 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 36
+TEST SUITE: None
+NOTES:
+"istiod" successfully installed!
+
+To learn more about the release, try:
+  $ helm status istiod -n istio-system
+  $ helm get all istiod -n istio-system
+
+Next steps:
+  * Get started with ambient: https://istio.io/latest/docs/ops/ambient/getting-started/
+  * Review ambient's architecture: https://istio.io/latest/docs/ops/ambient/architecture/
+  * Review the list of actively supported releases, CVE publications and our hardening guide:
+    * https://istio.io/latest/docs/releases/supported-releases/
+    * https://istio.io/latest/news/security/
+    * https://istio.io/latest/docs/ops/best-practices/security/
+
+For further documentation see https://istio.io website
+  $ helm upgrade ztunnel istio/ztunnel --version 1.29.1 -n istio-system --kube-context kind-kind --wait --timeout 2m --set meshConfig.defaultConfig.proxyMetadata.HTTP2_STREAM_WINDOW_SIZE=65535 --set meshConfig.defaultConfig.proxyMetadata.HTTP2_CONNECTION_WINDOW_SIZE=262140 --set meshConfig.defaultConfig.proxyMetadata.HTTP2_FRAME_SIZE=16384
+Release "ztunnel" has been upgraded. Happy Helming!
+NAME: ztunnel
+LAST DEPLOYED: Mon May 11 22:54:41 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 22
+TEST SUITE: None
+NOTES:
+ztunnel successfully installed!
+
+To learn more about the release, try:
+  $ helm status ztunnel -n istio-system
+  $ helm get all ztunnel -n istio-system
+  $ kubectl --context kind-kind label svc -n caddy caddy-service istio.io/ingress-use-waypoint=true --overwrite
+service/caddy-service not labeled
+  $ kubectl --context kind-kind apply -f /Users/andyyu/dev/istio-buffering/runs/_envoyfilter.yaml
+envoyfilter.networking.istio.io/buffer-limits-final unchanged
+envoyfilter.networking.istio.io/buffer-limits-final unchanged
+  $ kubectl --context kind-kind rollout restart -n istio-system daemonset/ztunnel
+daemonset.apps/ztunnel restarted
+  $ kubectl --context kind-kind rollout restart -n istio-gateway deployment/istio-gateway-istio
+deployment.apps/istio-gateway-istio restarted
+  $ kubectl --context kind-kind rollout restart -n istio-waypoint deployment/istio-waypoint
+deployment.apps/istio-waypoint restarted
+  $ kubectl --context kind-kind rollout status -n istio-gateway deployment/istio-gateway-istio --timeout=120s
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+error: timed out waiting for the condition
+  FAILED: Command '['kubectl', '--context', 'kind-kind', 'rollout', 'status', '-n', 'istio-gateway', 'deployment/istio-gateway-istio', '--timeout=120s']' returned non-zero exit status 1.
+
+=== 06_pilot_win_32k ===
+  $ helm upgrade istiod istio/istiod --version 1.29.1 -n istio-system --values /Users/andyyu/dev/istio-buffering/improved/istiod-values.yaml --set image=istiolocal/pilot:latest --set global.hub=istiolocal --set global.tag=latest --set global.imagePullPolicy=IfNotPresent --kube-context kind-kind --wait --timeout 3m --set pilot.env.PILOT_HBONE_INITIAL_STREAM_WINDOW_SIZE=32767 --set pilot.env.PILOT_HBONE_INITIAL_CONNECTION_WINDOW_SIZE=131068
+Release "istiod" has been upgraded. Happy Helming!
+NAME: istiod
+LAST DEPLOYED: Mon May 11 22:56:43 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 37
+TEST SUITE: None
+NOTES:
+"istiod" successfully installed!
+
+To learn more about the release, try:
+  $ helm status istiod -n istio-system
+  $ helm get all istiod -n istio-system
+
+Next steps:
+  * Get started with ambient: https://istio.io/latest/docs/ops/ambient/getting-started/
+  * Review ambient's architecture: https://istio.io/latest/docs/ops/ambient/architecture/
+  * Review the list of actively supported releases, CVE publications and our hardening guide:
+    * https://istio.io/latest/docs/releases/supported-releases/
+    * https://istio.io/latest/news/security/
+    * https://istio.io/latest/docs/ops/best-practices/security/
+
+For further documentation see https://istio.io website
+  $ helm upgrade ztunnel istio/ztunnel --version 1.29.1 -n istio-system --kube-context kind-kind --wait --timeout 2m --set meshConfig.defaultConfig.proxyMetadata.HTTP2_STREAM_WINDOW_SIZE=65535 --set meshConfig.defaultConfig.proxyMetadata.HTTP2_CONNECTION_WINDOW_SIZE=262140 --set meshConfig.defaultConfig.proxyMetadata.HTTP2_FRAME_SIZE=16384
+Release "ztunnel" has been upgraded. Happy Helming!
+NAME: ztunnel
+LAST DEPLOYED: Mon May 11 22:56:46 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 23
+TEST SUITE: None
+NOTES:
+ztunnel successfully installed!
+
+To learn more about the release, try:
+  $ helm status ztunnel -n istio-system
+  $ helm get all ztunnel -n istio-system
+  $ kubectl --context kind-kind label svc -n caddy caddy-service istio.io/ingress-use-waypoint=true --overwrite
+service/caddy-service not labeled
+  $ kubectl --context kind-kind apply -f /Users/andyyu/dev/istio-buffering/runs/_envoyfilter.yaml
+envoyfilter.networking.istio.io/buffer-limits-final unchanged
+envoyfilter.networking.istio.io/buffer-limits-final unchanged
+  $ kubectl --context kind-kind rollout restart -n istio-system daemonset/ztunnel
+daemonset.apps/ztunnel restarted
+  $ kubectl --context kind-kind rollout restart -n istio-gateway deployment/istio-gateway-istio
+deployment.apps/istio-gateway-istio restarted
+  $ kubectl --context kind-kind rollout restart -n istio-waypoint deployment/istio-waypoint
+deployment.apps/istio-waypoint restarted
+  $ kubectl --context kind-kind rollout status -n istio-gateway deployment/istio-gateway-istio --timeout=120s
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+gateway port: 32768
+resuming, skipping already-completed: ['00_baseline', '01_all_improvements', '02_only_pilot_envvars', '03_only_ztunnel_envvars', '04_only_envoyfilters']
+
+=== 00_baseline === (skip, already done)
+
+=== 01_all_improvements === (skip, already done)
+
+=== 02_only_pilot_envvars === (skip, already done)
+
+=== 03_only_ztunnel_envvars === (skip, already done)
+
+=== 04_only_envoyfilters === (skip, already done)
+
+=== 07_pilot_win_64k ===
+  $ helm upgrade istiod istio/istiod --version 1.29.1 -n istio-system --values /Users/andyyu/dev/istio-buffering/improved/istiod-values.yaml --set image=istiolocal/pilot:latest --set global.hub=istiolocal --set global.tag=latest --set global.imagePullPolicy=IfNotPresent --kube-context kind-kind --wait --timeout 3m --set pilot.env.PILOT_HBONE_INITIAL_STREAM_WINDOW_SIZE=65535 --set pilot.env.PILOT_HBONE_INITIAL_CONNECTION_WINDOW_SIZE=262140
+Release "istiod" has been upgraded. Happy Helming!
+NAME: istiod
+LAST DEPLOYED: Mon May 11 22:58:03 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 38
+TEST SUITE: None
+NOTES:
+"istiod" successfully installed!
+
+To learn more about the release, try:
+  $ helm status istiod -n istio-system
+  $ helm get all istiod -n istio-system
+
+Next steps:
+  * Get started with ambient: https://istio.io/latest/docs/ops/ambient/getting-started/
+  * Review ambient's architecture: https://istio.io/latest/docs/ops/ambient/architecture/
+  * Review the list of actively supported releases, CVE publications and our hardening guide:
+    * https://istio.io/latest/docs/releases/supported-releases/
+    * https://istio.io/latest/news/security/
+    * https://istio.io/latest/docs/ops/best-practices/security/
+
+For further documentation see https://istio.io website
+  $ helm upgrade ztunnel istio/ztunnel --version 1.29.1 -n istio-system --kube-context kind-kind --wait --timeout 2m --set meshConfig.defaultConfig.proxyMetadata.HTTP2_STREAM_WINDOW_SIZE=65535 --set meshConfig.defaultConfig.proxyMetadata.HTTP2_CONNECTION_WINDOW_SIZE=262140 --set meshConfig.defaultConfig.proxyMetadata.HTTP2_FRAME_SIZE=16384
+Release "ztunnel" has been upgraded. Happy Helming!
+NAME: ztunnel
+LAST DEPLOYED: Mon May 11 22:58:06 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 24
+TEST SUITE: None
+NOTES:
+ztunnel successfully installed!
+
+To learn more about the release, try:
+  $ helm status ztunnel -n istio-system
+  $ helm get all ztunnel -n istio-system
+  $ kubectl --context kind-kind label svc -n caddy caddy-service istio.io/ingress-use-waypoint=true --overwrite
+service/caddy-service not labeled
+  $ kubectl --context kind-kind apply -f /Users/andyyu/dev/istio-buffering/runs/_envoyfilter.yaml
+envoyfilter.networking.istio.io/buffer-limits-final unchanged
+envoyfilter.networking.istio.io/buffer-limits-final unchanged
+  $ kubectl --context kind-kind rollout restart -n istio-system daemonset/ztunnel
+daemonset.apps/ztunnel restarted
+  $ kubectl --context kind-kind rollout restart -n istio-gateway deployment/istio-gateway-istio
+deployment.apps/istio-gateway-istio restarted
+Waiting for deployment spec update to be observed...
+  $ kubectl --context kind-kind rollout restart -n istio-waypoint deployment/istio-waypoint
+Waiting for deployment spec update to be observed...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+deployment.apps/istio-waypoint restarted
+  $ kubectl --context kind-kind rollout status -n istio-gateway deployment/istio-gateway-istio --timeout=120s
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+deployment "istio-gateway-istio" successfully rolled out
+deployment "istio-gateway-istio" successfully rolled out
+  $ kubectl --context kind-kind rollout status -n istio-waypoint deployment/istio-waypoint --timeout=120s
+deployment "istio-waypoint" successfully rolled out
+  $ kubectl --context kind-kind rollout status -n istio-system daemonset/ztunnel --timeout=120s
+daemon set "ztunnel" successfully rolled out
+  settling 15s
+  pods: {'ztunnel': 'ztunnel-drx5j', 'gateway': 'istio-gateway-istio-577f679476-jbq6c', 'waypoint': 'istio-waypoint-7b4c975766-44nzd'}
+  curl start @ 1778497104
+  curl done @ 1778497134 (received 3850240 bytes)
+  settling 15s for prometheus scrape
+  received        = 3.67 MB
+  emitted (total) = 26.65 MB
+  first-burst 10s = ?  <-- caddy-side
+  gw_hbone_rx     = 13.65 MB  <-- gateway recv via HBONE
+  buffered at end = 22.98 MB
+  gw_mem_peak     = 8.72 MB
+  wp_mem_peak     = 21.73 MB
+  ztunnel_peak    = 10.23 MB
+  h2_pending_peak = 13.59 MB
+
+=== 08_pilot_win_128k ===
+  $ helm upgrade istiod istio/istiod --version 1.29.1 -n istio-system --values /Users/andyyu/dev/istio-buffering/improved/istiod-values.yaml --set image=istiolocal/pilot:latest --set global.hub=istiolocal --set global.tag=latest --set global.imagePullPolicy=IfNotPresent --kube-context kind-kind --wait --timeout 3m --set pilot.env.PILOT_HBONE_INITIAL_STREAM_WINDOW_SIZE=131071 --set pilot.env.PILOT_HBONE_INITIAL_CONNECTION_WINDOW_SIZE=524284
+Release "istiod" has been upgraded. Happy Helming!
+NAME: istiod
+LAST DEPLOYED: Mon May 11 22:59:10 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 39
+TEST SUITE: None
+NOTES:
+"istiod" successfully installed!
+
+To learn more about the release, try:
+  $ helm status istiod -n istio-system
+  $ helm get all istiod -n istio-system
+
+Next steps:
+  * Get started with ambient: https://istio.io/latest/docs/ops/ambient/getting-started/
+  * Review ambient's architecture: https://istio.io/latest/docs/ops/ambient/architecture/
+  * Review the list of actively supported releases, CVE publications and our hardening guide:
+    * https://istio.io/latest/docs/releases/supported-releases/
+    * https://istio.io/latest/news/security/
+    * https://istio.io/latest/docs/ops/best-practices/security/
+
+For further documentation see https://istio.io website
+  $ helm upgrade ztunnel istio/ztunnel --version 1.29.1 -n istio-system --kube-context kind-kind --wait --timeout 2m --set meshConfig.defaultConfig.proxyMetadata.HTTP2_STREAM_WINDOW_SIZE=65535 --set meshConfig.defaultConfig.proxyMetadata.HTTP2_CONNECTION_WINDOW_SIZE=262140 --set meshConfig.defaultConfig.proxyMetadata.HTTP2_FRAME_SIZE=16384
+Release "ztunnel" has been upgraded. Happy Helming!
+NAME: ztunnel
+LAST DEPLOYED: Mon May 11 22:59:13 2026
+NAMESPACE: istio-system
+STATUS: deployed
+REVISION: 25
+TEST SUITE: None
+NOTES:
+ztunnel successfully installed!
+
+To learn more about the release, try:
+  $ helm status ztunnel -n istio-system
+  $ helm get all ztunnel -n istio-system
+  $ kubectl --context kind-kind label svc -n caddy caddy-service istio.io/ingress-use-waypoint=true --overwrite
+service/caddy-service not labeled
+  $ kubectl --context kind-kind apply -f /Users/andyyu/dev/istio-buffering/runs/_envoyfilter.yaml
+envoyfilter.networking.istio.io/buffer-limits-final unchanged
+envoyfilter.networking.istio.io/buffer-limits-final unchanged
+  $ kubectl --context kind-kind rollout restart -n istio-system daemonset/ztunnel
+daemonset.apps/ztunnel restarted
+  $ kubectl --context kind-kind rollout restart -n istio-gateway deployment/istio-gateway-istio
+deployment.apps/istio-gateway-istio restarted
+  $ kubectl --context kind-kind rollout restart -n istio-waypoint deployment/istio-waypoint
+deployment.apps/istio-waypoint restarted
+  $ kubectl --context kind-kind rollout status -n istio-gateway deployment/istio-gateway-istio --timeout=120s
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "istio-gateway-istio" rollout to finish: 1 old replicas are pending termination...
+deployment "istio-gateway-istio" successfully rolled out
+  $ kubectl --context kind-kind rollout status -n istio-waypoint deployment/istio-waypoint --timeout=120s
+deployment "istio-waypoint" successfully rolled out
+  $ kubectl --context kind-kind rollout status -n istio-system daemonset/ztunnel --timeout=120s
+Waiting for daemon set "ztunnel" rollout to finish: 0 out of 1 new pods have been updated...
+daemon set "ztunnel" successfully rolled out
