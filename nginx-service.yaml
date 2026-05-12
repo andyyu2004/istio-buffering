@@ -1,0 +1,160 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nginx
+  labels:
+    istio-discovery: enabled
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: nginx
+  labels:
+    istio.io/dataplane-mode: ambient
+    istio.io/ingress-use-waypoint: "true"
+    istio.io/use-waypoint: istio-waypoint
+    istio.io/use-waypoint-namespace: istio-waypoint
+spec:
+  selector:
+    app: nginx-server
+  ports:
+    - protocol: TCP
+      port: 9998
+      targetPort: 443
+  type: ClusterIP
+
+---
+# Add a new listener on the gateway for nginx on port 9998
+apiVersion: gateway.networking.x-k8s.io/v1alpha1
+kind: XListenerSet
+metadata:
+  name: nginx
+  namespace: nginx
+spec:
+  parentRef:
+    name: istio-gateway
+    namespace: istio-gateway
+    kind: Gateway
+    group: gateway.networking.k8s.io
+  listeners:
+  - name: tls-listener
+    port: 9998
+    protocol: TLS
+    tls:
+      mode: Passthrough
+
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: nginx
+  namespace: nginx
+spec:
+  parentRefs:
+  - name: istio-gateway
+    namespace: istio-gateway
+    sectionName: tls-listener
+  rules:
+  - backendRefs:
+    - name: nginx-service
+      port: 9998
+
+---
+# NGINX config approximating ingress-nginx defaults for static file serving.
+# Key knobs mimicking ingress-nginx behaviour:
+#   - sendfile on              — zero-copy
+#   - tcp_nopush on            — fewer / larger packets to network
+#   - send_timeout 30s         — analog of Caddy's `write 30s`; if the client
+#                                  can't accept any byte for 30s consecutive,
+#                                  NGINX closes the connection
+#   - output_buffers 2 32k     — userspace output buffer per response (default)
+#   - keepalive_timeout 75s    — default
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: nginx
+data:
+  default.conf: |
+    server {
+        listen 443 ssl;
+        http2 on;
+        ssl_certificate     /etc/nginx/tls/tls.crt;
+        ssl_certificate_key /etc/nginx/tls/tls.key;
+
+        sendfile        on;
+        tcp_nopush      on;
+        send_timeout    30s;
+        output_buffers  2 32k;
+
+        location / {
+            root /data;
+            autoindex off;
+            default_type application/octet-stream;
+        }
+    }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-payload-server
+  namespace: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-server
+  template:
+    metadata:
+      labels:
+        app: nginx-server
+        istio.io/dataplane-mode: ambient
+    spec:
+      initContainers:
+      # 1 GB of random data, same as caddy
+      - name: create-payload
+        image: busybox
+        command: ["sh", "-c", "dd if=/dev/urandom of=/data/testdata.bin bs=1M count=1000"]
+        volumeMounts:
+        - name: data-storage
+          mountPath: /data
+      # Self-signed cert so we don't depend on cert-manager
+      - name: gen-cert
+        image: alpine:3
+        command:
+          - sh
+          - -c
+          - |
+            apk add --no-cache openssl >/dev/null
+            openssl req -x509 -newkey rsa:2048 -nodes \
+              -keyout /tls/tls.key -out /tls/tls.crt -days 3650 \
+              -subj "/CN=nginx-local" \
+              -addext "subjectAltName=DNS:nginx-local,IP:127.0.0.1"
+            chmod 644 /tls/tls.key /tls/tls.crt
+        volumeMounts:
+        - name: tls-volume
+          mountPath: /tls
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 443
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/nginx/conf.d
+        - name: data-storage
+          mountPath: /data
+        - name: tls-volume
+          mountPath: /etc/nginx/tls
+      volumes:
+      - name: config-volume
+        configMap:
+          name: nginx-config
+      - name: data-storage
+        emptyDir: {}
+      - name: tls-volume
+        emptyDir: {}

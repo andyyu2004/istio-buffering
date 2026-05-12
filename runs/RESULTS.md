@@ -122,3 +122,78 @@ python3 runs/sweep.py          # run (writes runs/sweep.csv incrementally)
 ```
 
 Resume-friendly: if `runs/sweep.csv` already has a row for a config (by name), the sweep skips it. Delete the CSV to start fresh.
+
+---
+
+# Addendum: improvements clip the *initial* burst but don't bound steady-state
+
+The improvements clip the initial buffering burst but **do not prevent the in-flight buffer from growing over time**. With a short server-side write timeout, applications still time out mid-transfer.
+
+## Repro
+
+`caddy-service.yaml` Caddyfile now sets a 30s `write` timeout:
+
+```
+{
+    servers {
+        timeouts {
+            write 30s
+        }
+    }
+}
+```
+
+With the full improved stack live (all three improvements applied, waypoint in path):
+
+```fish
+curl -k https://127.0.0.1:$(dockerport kindccm 9999)/testdata.bin -o /dev/null \
+  --limit-rate 125k --http1.1 --max-time 600
+```
+
+## Result
+
+Curl exits at **3:23** with **code 18 "partial file"** after receiving **25.98 MB** of the 1 GB file. Caddy's access log shows:
+
+```json
+"duration": 30.000812894,   // exactly 30s — write timeout fired
+"size":     39960576,       // ~38 MB pushed into the pipe before write blocked
+"status":   200
+```
+
+Sequence:
+
+| t (s) | Event |
+|---|---|
+| 0 | Curl connects, requests `/testdata.bin` |
+| 0–30 | Caddy writes ~38 MB into downstream buffers (kernel, ztunnel, in-flight HBONE, gateway kernel send). Client receives ~3.75 MB. |
+| 30 | Caddy's write blocks past 30 s. **Write timeout fires.** Caddy closes the socket. |
+| 30–203 | The ~26 MB still queued between gateway and client drains at 125 KB/s. The ~12 MB upstream of the gateway is lost to connection teardown. |
+| 203 | Curl receives EOF; exits with code 18, "transfer closed with 1022590976 bytes remaining". |
+
+## Why this happens despite the improvements
+
+`PILOT_HBONE_INITIAL_STREAM_WINDOW_SIZE` sets the **initial** H/2 window. Envoy's auto-tuned stream flow control grows the window via `WINDOW_UPDATE` frames as throughput is observed. In our 30-second window, the effective window expands well beyond 64 KB — enough to let 30+ MB accumulate.
+
+The `improved/README.md` flagged this in passing ("the buffer window seems to want to grow over time… after ~10 minutes the data buffered grows to 19MB"). The growth is actually faster — 38 MB by 30 s.
+
+Envoy's `*_bytes_buffered` gauges all read **zero** during the post-timeout drain phase, because by then the data lives in places Envoy doesn't account for:
+
+- Kernel TCP send buffer Caddy → ztunnel (within the Caddy pod)
+- Ztunnel internal Rust buffers (no metric)
+- HBONE in-flight bytes (covered by the grown H/2 window)
+- Kernel TCP send buffer gateway → client (`TCP_NOTSENT_LOWAT=16K` only bounds this last layer)
+
+`container_memory_working_set_bytes` does catch the kernel buffers, but it's a pod-wide gauge with significant noise floor.
+
+## Implication for production
+
+Any customer with a server-side write timeout shorter than `growable_in_flight_buffer / client_bandwidth` will hit this. At 125 KB/s and a 38 MB buffer, that's ≈ 5 minutes of writability burned per request. Polling Tentacle's write timeout is in the order of 1 minute — confirmed insufficient.
+
+The three current improvements **are not enough on their own**. They reduce the *peak memory* and *initial burst*, but the customer's actual failure mode (write-timeout → connection death) is still reachable.
+
+## Open knobs to investigate next
+
+1. **Cap the dynamic H/2 window** — Envoy's stream-flow auto-growth needs an upper bound knob, or set `max_concurrent_streams=1` on `connect_originate` to defeat multiplexing.
+2. **Verify `TCP_NOTSENT_LOWAT` is firing** — read `/proc/net/tcp` inside the gateway during a transfer and confirm `tx_queue` stays ≤ 16 KB.
+3. **Per-cluster `per_connection_buffer_limit_bytes`** — the EnvoyFilter currently only patches listeners (sender side), not the HBONE upstream clusters (receiver side).
+4. **Raise the application's write timeout** — workaround, not a fix. Octopus EFT did this for Polling Tentacles already (the "Polling Tentacle Buffering Workaround" referenced in the Linear ticket).
