@@ -17,7 +17,16 @@ spec:
               level: 6 # IPPROTO_TCP
               name: 25 # TCP_NOTSENT_LOWAT
               int_value: 16384
-              state: STATE_LISTENING
+              state: STATE_PREBIND
+            # Cap kernel send buffer on accepted sockets. Linux doubles the
+            # requested value (so 64K → ~128K real buffer). Together with
+            # TCP_NOTSENT_LOWAT this bounds both unsent and in-flight
+            # (sent-but-unacked) bytes toward the slow client.
+            - description: "Cap SO_SNDBUF on downstream sockets"
+              level: 1 # SOL_SOCKET
+              name: 7 # SO_SNDBUF
+              int_value: 65536
+              state: STATE_PREBIND
     - applyTo: CLUSTER
       match:
         context: ANY
@@ -25,6 +34,18 @@ spec:
         operation: MERGE
         value:
           per_connection_buffer_limit_bytes: 32768
+          upstream_bind_config:
+            source_address:
+              address: "0.0.0.0"
+              port_value: 0
+            socket_options:
+              # Cap kernel recv buffer on upstream sockets so it doesn't
+              # auto-tune up to several MB from the waypoint side.
+              - description: "Cap SO_RCVBUF on upstream sockets"
+                level: 1 # SOL_SOCKET
+                name: 8 # SO_RCVBUF
+                int_value: 65536
+                state: STATE_PREBIND
     # - applyTo: CLUSTER
     #   #match:
     #   #  context: ANY
