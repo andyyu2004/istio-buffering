@@ -1,0 +1,105 @@
+{"ts": 1778626800.369944, "ns": "caddy", "pod": "caddy-payload-server-59df5f4d9d-2knhn", "state": "_AGG_", "tx_sum": 0, "rx_sum": 0, "conn_count": 2}
+{"ts": 1778626800.369944, "ns": "caddy", "pod": "caddy-payload-server-59df5f4d9d-2knhn", "local": "10.244.0.42:15008", "rem": "10.244.0.45:34090", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "caddy", "pod": "caddy-payload-server-59df5f4d9d-2knhn", "local": "10.244.0.42:15008", "rem": "10.244.0.45:56858", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "state": "_AGG_", "tx_sum": 0, "rx_sum": 0, "conn_count": 13}
+{"ts": 1778626800.369944, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "10.244.0.44:9999", "rem": "10.244.0.1:31508", "state": "FIN_W2", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:44146", "rem": "127.0.0.1:15090", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:48188", "rem": "127.0.0.1:15000", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:34612", "rem": "127.0.0.1:15020", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:34626", "rem": "127.0.0.1:15020", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:15000", "rem": "127.0.0.1:48188", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "10.244.0.44:38754", "rem": "10.244.0.45:15008", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "10.244.0.44:49014", "rem": "10.244.0.45:15008", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "10.244.0.44:38402", "rem": "10.96.103.109:15012", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:15090", "rem": "127.0.0.1:44146", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:15020", "rem": "127.0.0.1:34626", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:15020", "rem": "127.0.0.1:34612", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "10.244.0.44:15020", "rem": "10.244.0.40:46142", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "state": "_AGG_", "tx_sum": 0, "rx_sum": 0, "conn_count": 14}
+{"ts": 1778626800.369944, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:34624", "rem": "127.0.0.1:15020", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:34630", "rem": "127.0.0.1:15020", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:34090", "rem": "10.244.0.42:15008", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:15008", "rem": "10.244.0.44:38754", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:36144", "rem": "127.0.0.1:15000", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:15008", "rem": "10.244.0.44:49014", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:15090", "rem": "127.0.0.1:38716", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:56858", "rem": "10.244.0.42:15008", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:38716", "rem": "127.0.0.1:15090", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:15000", "rem": "127.0.0.1:36144", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:35934", "rem": "10.96.103.109:15012", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:15020", "rem": "127.0.0.1:34624", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:15020", "rem": "127.0.0.1:34630", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:15020", "rem": "10.244.0.40:49506", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-system", "pod": "ztunnel-7szh2", "state": "_AGG_", "tx_sum": 0, "rx_sum": 0, "conn_count": 2}
+{"ts": 1778626800.369944, "ns": "istio-system", "pod": "ztunnel-7szh2", "local": "10.244.0.38:47308", "rem": "10.96.103.109:15012", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626800.369944, "ns": "istio-system", "pod": "ztunnel-7szh2", "local": "10.244.0.38:15020", "rem": "10.244.0.40:43536", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-system", "pod": "ztunnel-7szh2", "state": "_AGG_", "tx_sum": 0, "rx_sum": 0, "conn_count": 2}
+{"ts": 1778626801.37091, "ns": "istio-system", "pod": "ztunnel-7szh2", "local": "10.244.0.38:47308", "rem": "10.96.103.109:15012", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-system", "pod": "ztunnel-7szh2", "local": "10.244.0.38:15020", "rem": "10.244.0.40:43536", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "caddy", "pod": "caddy-payload-server-59df5f4d9d-2knhn", "state": "_AGG_", "tx_sum": 0, "rx_sum": 0, "conn_count": 2}
+{"ts": 1778626801.37091, "ns": "caddy", "pod": "caddy-payload-server-59df5f4d9d-2knhn", "local": "10.244.0.42:15008", "rem": "10.244.0.45:34090", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "caddy", "pod": "caddy-payload-server-59df5f4d9d-2knhn", "local": "10.244.0.42:15008", "rem": "10.244.0.45:56858", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "state": "_AGG_", "tx_sum": 0, "rx_sum": 0, "conn_count": 14}
+{"ts": 1778626801.37091, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:34624", "rem": "127.0.0.1:15020", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:34630", "rem": "127.0.0.1:15020", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:34090", "rem": "10.244.0.42:15008", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:15008", "rem": "10.244.0.44:38754", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:36144", "rem": "127.0.0.1:15000", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:15008", "rem": "10.244.0.44:49014", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:15090", "rem": "127.0.0.1:38716", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:56858", "rem": "10.244.0.42:15008", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:38716", "rem": "127.0.0.1:15090", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:15000", "rem": "127.0.0.1:36144", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:35934", "rem": "10.96.103.109:15012", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:15020", "rem": "127.0.0.1:34624", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:15020", "rem": "127.0.0.1:34630", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:15020", "rem": "10.244.0.40:49506", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "state": "_AGG_", "tx_sum": 0, "rx_sum": 0, "conn_count": 13}
+{"ts": 1778626801.37091, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "10.244.0.44:9999", "rem": "10.244.0.1:31508", "state": "FIN_W2", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:44146", "rem": "127.0.0.1:15090", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:48188", "rem": "127.0.0.1:15000", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:34612", "rem": "127.0.0.1:15020", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:34626", "rem": "127.0.0.1:15020", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:15000", "rem": "127.0.0.1:48188", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "10.244.0.44:38754", "rem": "10.244.0.45:15008", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "10.244.0.44:49014", "rem": "10.244.0.45:15008", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "10.244.0.44:38402", "rem": "10.96.103.109:15012", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:15090", "rem": "127.0.0.1:44146", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:15020", "rem": "127.0.0.1:34626", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:15020", "rem": "127.0.0.1:34612", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626801.37091, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "10.244.0.44:15020", "rem": "10.244.0.40:46142", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "caddy", "pod": "caddy-payload-server-59df5f4d9d-2knhn", "state": "_AGG_", "tx_sum": 0, "rx_sum": 0, "conn_count": 2}
+{"ts": 1778626802.3726022, "ns": "caddy", "pod": "caddy-payload-server-59df5f4d9d-2knhn", "local": "10.244.0.42:15008", "rem": "10.244.0.45:34090", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "caddy", "pod": "caddy-payload-server-59df5f4d9d-2knhn", "local": "10.244.0.42:15008", "rem": "10.244.0.45:56858", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "state": "_AGG_", "tx_sum": 0, "rx_sum": 0, "conn_count": 14}
+{"ts": 1778626802.3726022, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:34624", "rem": "127.0.0.1:15020", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:34630", "rem": "127.0.0.1:15020", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:34090", "rem": "10.244.0.42:15008", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:15008", "rem": "10.244.0.44:38754", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:36144", "rem": "127.0.0.1:15000", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:15008", "rem": "10.244.0.44:49014", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:15090", "rem": "127.0.0.1:38716", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:56858", "rem": "10.244.0.42:15008", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:38716", "rem": "127.0.0.1:15090", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:15000", "rem": "127.0.0.1:36144", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:35934", "rem": "10.96.103.109:15012", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:15020", "rem": "127.0.0.1:34624", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "127.0.0.1:15020", "rem": "127.0.0.1:34630", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-waypoint", "pod": "istio-waypoint-6d6f454c6b-xrsc6", "local": "10.244.0.45:15020", "rem": "10.244.0.40:49506", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-system", "pod": "ztunnel-7szh2", "state": "_AGG_", "tx_sum": 0, "rx_sum": 0, "conn_count": 2}
+{"ts": 1778626802.3726022, "ns": "istio-system", "pod": "ztunnel-7szh2", "local": "10.244.0.38:47308", "rem": "10.96.103.109:15012", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-system", "pod": "ztunnel-7szh2", "local": "10.244.0.38:15020", "rem": "10.244.0.40:43536", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "state": "_AGG_", "tx_sum": 0, "rx_sum": 0, "conn_count": 13}
+{"ts": 1778626802.3726022, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "10.244.0.44:9999", "rem": "10.244.0.1:31508", "state": "FIN_W2", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:44146", "rem": "127.0.0.1:15090", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:48188", "rem": "127.0.0.1:15000", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:34612", "rem": "127.0.0.1:15020", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:34626", "rem": "127.0.0.1:15020", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:15000", "rem": "127.0.0.1:48188", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "10.244.0.44:38754", "rem": "10.244.0.45:15008", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "10.244.0.44:49014", "rem": "10.244.0.45:15008", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "10.244.0.44:38402", "rem": "10.96.103.109:15012", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:15090", "rem": "127.0.0.1:44146", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:15020", "rem": "127.0.0.1:34626", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "127.0.0.1:15020", "rem": "127.0.0.1:34612", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}
+{"ts": 1778626802.3726022, "ns": "istio-gateway", "pod": "istio-gateway-istio-5756bfbfcb-wn45q", "local": "10.244.0.44:15020", "rem": "10.244.0.40:46142", "state": "ESTAB", "tx_queue": 0, "rx_queue": 0}

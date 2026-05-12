@@ -29,11 +29,11 @@ kubectl apply -f gateway-and-waypoint.yaml
 # (kernel 4.15+); older clusters need kubelet --allowed-unsafe-sysctls.
 
 # Turn on ALL the Envoy metrics
-# kubectl patch configmap istio -n istio-system --type merge -p '{
-#   "data": {
-#     "mesh": "defaultConfig:\n  proxyStatsMatcher:\n    inclusionRegexps:\n    - \".*\"\n"
-#   }
-# }'
+kubectl patch configmap istio -n istio-system --type merge -p '{
+  "data": {
+    "mesh": "defaultConfig:\n  proxyStatsMatcher:\n    inclusionRegexps:\n    - \".*\"\n"
+  }
+}'
 
 # Set Gateway and Waypoint log levels to "trace"
 # istioctl pc log -n istio-gateway deploy/istio-gateway-istio --level trace
