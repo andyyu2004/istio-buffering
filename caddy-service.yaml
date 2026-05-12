@@ -73,13 +73,26 @@ metadata:
   namespace: caddy
 data:
   Caddyfile: |
+    # Aggressive write timeout — surfaces the "buffer slowly grows; eventually
+    # the application's write blocks past its timeout" hypothesis. With a slow
+    # client and a backpressuring path, application writes should never block
+    # for 30s. If we see Caddy log a timeout, the buffer is still growing
+    # downstream over time despite our improvements.
+    {
+        servers {
+            timeouts {
+                write 30s
+            }
+        }
+    }
+
     :443 {
         # This force-enables TLS for any connection to port 443
         tls internal {
             on_demand
         }
-    
-        # Crucial: This allows Caddy to serve a cert even if the 
+
+        # Crucial: This allows Caddy to serve a cert even if the
         # client hits an IP instead of a hostname
         @fallback {
             not header_regexp Host .*
