@@ -1,7 +1,7 @@
 profile: ambient
 image: yunacr.azurecr.io/pilot-1.29.1:latest
 global:
-  imagePullPolicy: Always
+  imagePullPolicy: IfNotPresent
 pilot:
   env:
     ENABLE_INGRESS_WAYPOINT_ROUTING: true
@@ -15,6 +15,6 @@ meshConfig:
       inclusionRegexps:
         - ".*"
   discoverySelectors:
-  - matchLabels:
-      istio-discovery: enabled
+    - matchLabels:
+        istio-discovery: enabled
   hboneIdleTimeout: 15s
