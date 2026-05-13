@@ -39,12 +39,12 @@ spec:
     kind: Gateway
     group: gateway.networking.k8s.io
   listeners:
-  - name: tls-listener
-    port: 9999
-    protocol: TLS
-    #hostname: caddy.internal
-    tls:
-      mode: Passthrough
+    - name: tls-listener
+      port: 9999
+      protocol: TLS
+      #hostname: caddy.internal
+      tls:
+        mode: Passthrough
 
 ---
 apiVersion: gateway.networking.k8s.io/v1alpha2
@@ -54,15 +54,15 @@ metadata:
   namespace: caddy
 spec:
   parentRefs:
-  - name: istio-gateway
-    namespace: istio-gateway
-    sectionName: tls-listener
+    - name: istio-gateway
+      namespace: istio-gateway
+      sectionName: tls-listener
   # hostnames:
   # - caddy.internal
   rules:
-  - backendRefs:
-    - name: caddy-service
-      port: 9999
+    - backendRefs:
+        - name: caddy-service
+          port: 9999
 
 ---
 # Caddy config creates a self-signed TLS certificate and accepts any hostname
@@ -73,19 +73,6 @@ metadata:
   namespace: caddy
 data:
   Caddyfile: |
-    # Aggressive write timeout — surfaces the "buffer slowly grows; eventually
-    # the application's write blocks past its timeout" hypothesis. With a slow
-    # client and a backpressuring path, application writes should never block
-    # for 30s. If we see Caddy log a timeout, the buffer is still growing
-    # downstream over time despite our improvements.
-    {
-        servers {
-            timeouts {
-                write 30s
-            }
-        }
-    }
-
     :443 {
         # This force-enables TLS for any connection to port 443
         tls internal {
@@ -125,26 +112,31 @@ spec:
     spec:
       # InitContainer creates a 1GB file
       initContainers:
-      - name: create-payload
-        image: busybox
-        command: ["sh", "-c", "dd if=/dev/urandom of=/data/testdata.bin bs=1M count=1000"]
-        volumeMounts:
-        - name: data-storage
-          mountPath: /data
+        - name: create-payload
+          image: busybox
+          command:
+            [
+              "sh",
+              "-c",
+              "dd if=/dev/urandom of=/data/testdata.bin bs=1M count=1000",
+            ]
+          volumeMounts:
+            - name: data-storage
+              mountPath: /data
       containers:
-      - name: caddy
-        image: caddy:latest
-        ports:
-        - containerPort: 443
-        volumeMounts:
-        - name: config-volume
-          mountPath: /etc/caddy/Caddyfile
-          subPath: Caddyfile
-        - name: data-storage
-          mountPath: /data
+        - name: caddy
+          image: caddy:latest
+          ports:
+            - containerPort: 443
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/caddy/Caddyfile
+              subPath: Caddyfile
+            - name: data-storage
+              mountPath: /data
       volumes:
-      - name: config-volume
-        configMap:
-          name: caddy-config
-      - name: data-storage
-        emptyDir: {}
+        - name: config-volume
+          configMap:
+            name: caddy-config
+        - name: data-storage
+          emptyDir: {}

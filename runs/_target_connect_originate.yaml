@@ -1,0 +1,74 @@
+# Targeted patches for the internal connect_originate / inner/outer / main_internal
+# listeners — `context: ANY` from before didn't match them because they're internal.
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: connect-originate-tight
+  namespace: istio-gateway
+spec:
+  targetRefs:
+    - kind: Gateway
+      name: istio-gateway
+      group: gateway.networking.k8s.io
+  configPatches:
+    - applyTo: LISTENER
+      match:
+        listener:
+          name: connect_originate
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 4096
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: connect-originate-tight
+  namespace: istio-waypoint
+spec:
+  targetRefs:
+    - kind: Gateway
+      name: istio-waypoint
+      group: gateway.networking.k8s.io
+  configPatches:
+    - applyTo: LISTENER
+      match:
+        listener:
+          name: connect_originate
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 4096
+    - applyTo: LISTENER
+      match:
+        listener:
+          name: inner_connect_originate
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 4096
+    - applyTo: LISTENER
+      match:
+        listener:
+          name: outer_connect_originate
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 4096
+    - applyTo: LISTENER
+      match:
+        listener:
+          name: main_internal
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 4096
+    - applyTo: LISTENER
+      match:
+        listener:
+          name: connect_terminate
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 4096
