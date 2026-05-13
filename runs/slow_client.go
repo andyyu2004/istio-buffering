@@ -91,8 +91,26 @@ func main() {
 		fmt.Fprintln(os.Stderr, "read error:", err)
 	}
 	avgKBps := float64(written) / elapsed.Seconds() / 1024
-	fmt.Fprintf(os.Stderr, "Done. bytes=%d  duration=%.2fs  avg=%.1f KB/s\n",
-		written, elapsed.Seconds(), avgKBps)
+	fmt.Fprintf(os.Stderr, "Done. total=%s  duration=%.2fs  avg=%.1f KB/s\n",
+		fmtBytes(written), elapsed.Seconds(), avgKBps)
+}
+
+func fmtBytes(n int64) string {
+	const (
+		KiB = 1024
+		MiB = 1024 * KiB
+		GiB = 1024 * MiB
+	)
+	switch {
+	case n >= GiB:
+		return fmt.Sprintf("%.2f GiB", float64(n)/GiB)
+	case n >= MiB:
+		return fmt.Sprintf("%.2f MiB", float64(n)/MiB)
+	case n >= KiB:
+		return fmt.Sprintf("%.1f KiB", float64(n)/KiB)
+	default:
+		return fmt.Sprintf("%d B", n)
+	}
 }
 
 // readSlowly drains r at most `rateKBps` KB/s. With a small SO_RCVBUF on the
@@ -144,8 +162,8 @@ func reportProgress(start time.Time, interval time.Duration, total *int64, stop 
 			cur := atomic.LoadInt64(total)
 			dt := now.Sub(prevT).Seconds()
 			rate := float64(cur-prev) / dt / 1024
-			fmt.Fprintf(os.Stderr, "  +%.1fs:  total=%d B  interval=%.1f KB/s\n",
-				now.Sub(start).Seconds(), cur, rate)
+			fmt.Fprintf(os.Stderr, "  +%.1fs:  total=%s  interval=%.1f KB/s\n",
+				now.Sub(start).Seconds(), fmtBytes(cur), rate)
 			prev = cur
 			prevT = now
 		}
