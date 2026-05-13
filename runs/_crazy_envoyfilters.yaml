@@ -1,0 +1,70 @@
+# Aggressively-tight buffer limits — drop everything Envoy lets us to 4 KiB.
+# Filter covers gateway and waypoint, listeners and clusters.
+# TCP_NOTSENT_LOWAT is only applied to the gateway because waypoint Envoy
+# rejects socket options on its internal listeners.
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: buffer-limits-crazy
+  namespace: istio-gateway
+spec:
+  configPatches:
+    - applyTo: LISTENER
+      match:
+        context: ANY
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 4096
+          socket_options:
+            - description: "TCP_NOTSENT_LOWAT=4k"
+              level: 6      # IPPROTO_TCP
+              name: 25      # TCP_NOTSENT_LOWAT
+              int_value: 4096
+              state: STATE_LISTENING
+            - description: "SO_SNDBUF=4k (kernel doubles, min wmem=4k)"
+              level: 1      # SOL_SOCKET
+              name: 7       # SO_SNDBUF
+              int_value: 4096
+              state: STATE_LISTENING
+            - description: "SO_RCVBUF=4k"
+              level: 1
+              name: 8       # SO_RCVBUF
+              int_value: 4096
+              state: STATE_LISTENING
+    - applyTo: CLUSTER
+      match:
+        context: ANY
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 4096
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: buffer-limits-crazy
+  namespace: istio-waypoint
+spec:
+  targetRefs:
+    - kind: Gateway
+      name: istio-waypoint
+      group: gateway.networking.k8s.io
+  configPatches:
+    - applyTo: LISTENER
+      match:
+        context: ANY
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 4096
+          # No socket_options on waypoint listeners — Envoy rejects them on
+          # internal listeners (connect_terminate / main_internal / etc.).
+    - applyTo: CLUSTER
+      match:
+        context: ANY
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 4096
