@@ -19,7 +19,7 @@ Set:
 
 This needs to be done in (at least) two places:
 - the `connect_originate` clusters used by HBONE (see [istiod-values.yaml](istiod-values.yaml#L19-L22))
-  - note this uses new meshConfig settings exposed by the two PRs linked [here](https://github.com/istio/istio/issues/59887#issuecomment-4286939941); you'll need to build the `pilot` image then reference it [here](istiod-values.yaml#L2)
+  - note this uses new environment variables exposed by the PR linked [here](https://github.com/istio/istio/issues/59887#issuecomment-4296304025); you'll need to build the `pilot` image then reference it [here](istiod-values.yaml#L2); alternatively the PR has been merged into the `release-1.29` branch so you could use a dev build of that (or later)
 - `ztunnel` (see [ztunnel-values.yaml](ztunnel-values.yaml)).
 
 The values of 64k and 256k feel like they make sense for us given our K8s cluster nodes are essentially on the same "LAN", i.e. high bandwidth, low latency. Whilst the initial window sizes are small, they will quickly grow as long as there is no backpressure.
