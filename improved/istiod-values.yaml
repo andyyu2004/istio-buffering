@@ -7,6 +7,8 @@ pilot:
     ENABLE_INGRESS_WAYPOINT_ROUTING: true
     PILOT_ENABLE_ALPHA_GATEWAY_API: true
     #PILOT_HTTP10: true
+    PILOT_HBONE_INITIAL_STREAM_WINDOW_SIZE: 65535
+    PILOT_HBONE_INITIAL_CONNECTION_WINDOW_SIZE: 262140
 meshConfig:
   defaultConfig:
     proxyStatsMatcher:
@@ -16,7 +18,3 @@ meshConfig:
   - matchLabels:
       istio-discovery: enabled
   hboneIdleTimeout: 15s
-  hboneInitialStreamWindowSize: 65535                                                                                                      
-  hboneInitialConnectionWindowSize: 262140                                                                                                 
-  hboneNoPoolingInitialStreamWindowSize: 65535                                                                                             
-  hboneNoPoolingInitialConnectionWindowSize: 262140                                                                                        
