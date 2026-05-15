@@ -22,6 +22,12 @@ helm upgrade --install ztunnel istio/ztunnel --version $istioHelmChartVersion -n
 
 kubectl apply -f gateway-and-waypoint.yaml
 
+# TCP buffer sysctls (net.ipv4.tcp_rmem / tcp_wmem) are applied via the
+# istio-gateway-options / istio-waypoint-options ConfigMaps in
+# gateway-and-waypoint.yaml — istiod reconciles the Deployment from those, so
+# a direct `kubectl patch` would just get reverted. Safe sysctls on k8s 1.32+
+# (kernel 4.15+); older clusters need kubelet --allowed-unsafe-sysctls.
+
 # Turn on ALL the Envoy metrics
 # kubectl patch configmap istio -n istio-system --type merge -p '{
 #   "data": {
