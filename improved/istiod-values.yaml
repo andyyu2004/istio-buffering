@@ -1,5 +1,5 @@
 profile: ambient
-image: yunacr.azurecr.io/pilot-1.29.1:meshconfig
+image: yunacr.azurecr.io/pilot:env_vars
 global:
   imagePullPolicy: Always
 pilot:
