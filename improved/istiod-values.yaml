@@ -1,5 +1,5 @@
 profile: ambient
-image: yunacr.azurecr.io/pilot-1.29.1:latest
+image: yunacr.azurecr.io/pilot:1.29.0-hbone-envvars
 global:
   imagePullPolicy: Always
 pilot:
@@ -15,6 +15,6 @@ meshConfig:
       inclusionRegexps:
         - ".*"
   discoverySelectors:
-  - matchLabels:
-      istio-discovery: enabled
+    - matchLabels:
+        istio-discovery: enabled
   hboneIdleTimeout: 15s
