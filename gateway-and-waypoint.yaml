@@ -18,11 +18,11 @@ metadata:
 #    networking.istio.io/service-type: ClusterIP 
 spec:
   gatewayClassName: istio
-  infrastructure:
-    parametersRef:
-      group: ""
-      kind: ConfigMap
-      name: istio-gateway-options
+  # infrastructure:
+  #   parametersRef:
+  #     group: ""
+  #     kind: ConfigMap
+  #     name: istio-gateway-options  
   allowedListeners:
     namespaces:
       from: All
@@ -38,29 +38,32 @@ spec:
 
 ---
 
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: istio-gateway-options
-  namespace: istio-gateway
-data:
-  deployment: |
-    spec:
-      template:
-        spec:
-          securityContext:
-            sysctls:
-            - name: net.ipv4.tcp_rmem
-              value: "4096 131072 1048576"
-            - name: net.ipv4.tcp_wmem
-              value: "4096 131072 1048576"
-  # service: |
-  #   metadata:
-  #     annotations:
-  #       #service.beta.kubernetes.io/azure-load-balancer-ipv4: "$ingressIpAddress"
-  #       #service.beta.kubernetes.io/azure-load-balancer-tcp-idle-timeout: "15"
-  #   spec:
-  #     externalTrafficPolicy: Local
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: istio-gateway-options
+#   namespace: istio-gateway
+# data:
+#   deployment: |
+#     spec:
+#       template:
+#         spec:
+#           containers:
+#           - name: istio-proxy
+#             resources:
+#               requests:
+#                 cpu: 500m
+#                 memory: 2048Mi
+#               limits:
+#                 cpu: 2000m
+#                 memory: 8192Mi
+#   service: |
+#     metadata:
+#       annotations:
+#         #service.beta.kubernetes.io/azure-load-balancer-ipv4: "$ingressIpAddress"
+#         #service.beta.kubernetes.io/azure-load-balancer-tcp-idle-timeout: "15"
+#     spec:
+#       externalTrafficPolicy: Local
 
 
 # Waypoint
@@ -82,11 +85,11 @@ metadata:
     istio.io/waypoint-for: service
 spec:
   gatewayClassName: istio-waypoint
-  infrastructure:
-    parametersRef:
-      group: ""
-      kind: ConfigMap
-      name: istio-waypoint-options
+  # infrastructure:
+  #   parametersRef:
+  #     group: ""
+  #     kind: ConfigMap
+  #     name: istio-waypoint-options
   listeners:
   - allowedRoutes:
       namespaces:
@@ -96,19 +99,22 @@ spec:
     protocol: HBONE
 ---
 
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: istio-waypoint-options
-  namespace: istio-waypoint
-data:
-  deployment: |
-    spec:
-      template:
-        spec:
-          securityContext:
-            sysctls:
-            - name: net.ipv4.tcp_rmem
-              value: "4096 131072 1048576"
-            - name: net.ipv4.tcp_wmem
-              value: "4096 131072 1048576"
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: istio-waypoint-options
+#   namespace: istio-waypoint
+# data:
+#   deployment: |
+#     spec:
+#       template:
+#         spec:
+#           containers:
+#           - name: istio-proxy
+#             resources:
+#               requests:
+#                 cpu: 500m
+#                 memory: 2048Mi
+#               limits:
+#                 cpu: 2000m
+#                 memory: 8192Mi
