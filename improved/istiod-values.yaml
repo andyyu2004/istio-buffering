@@ -1,5 +1,5 @@
 profile: ambient
-image: yunacr.azurecr.io/pilot:1.29.0-hbone-envvars
+image: yunacr.azurecr.io/pilot:1.29.2-hbone-envvars
 global:
   imagePullPolicy: Always
 pilot:
