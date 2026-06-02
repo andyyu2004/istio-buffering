@@ -5,7 +5,7 @@ set -euo pipefail
 helm repo add istio https://istio-release.storage.googleapis.com/charts
 helm repo update
 
-istioHelmChartVersion="1.29.2"
+istioHelmChartVersion="1.29.3"
 k8sGatewayAPIVersion="v1.4.0"
 
 kubectl apply -f istio-system-namespace.yaml
