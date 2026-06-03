@@ -2,7 +2,9 @@
 
 Through experimentation I have found 3 sets of settings that significantly improve (reduce) the amount of buffering that occurs with a slow client.
 
-With the improved configuration settings in place, buffering is reduced from ~73MB down to ~12MB during the initial few seconds of the connection. It then rises slowly as data is drained towards the client. It should be noted that the buffer window seems to want to grow over time (after ~10 minutes the data buffered grows to 19MB). This suggests there is further tuning to do.
+With the improved configuration settings in place, buffering is reduced from ~73MB down to ~12MB during the initial few seconds of the connection.
+
+An earlier version of this note claimed the difference measured by wireshark and curl "grows over time to ~19MB", suggesting the some buffer was growing over time. That was a measurement artifact: Wireshark reports MB (10^6) while curl reports MiB (2^20),
 
 Manual testing indicates that having these settings do not meaningfully change the "fast client" situation. I tested from a client with a 500Mbps connection roughly ~180ms RTT away from the K8s cluster and it was able to achieve 18MB/s with the original (excessive buffering) repro setup, and with this improved setup.
 
@@ -47,15 +49,15 @@ We were able to set this on the Gateway, but it would not apply on a Waypoint.
 
 When attempting to apply on a Waypoint, we get this error:
 ```
-2026-04-21T07:41:29.398901Z    warning    envoy config external/envoy/source/extensions/config_subscription/grpc/delta_subscription_state.cc:283    delta config for type.googleapis.com/envoy.config.listener.v3.Listener rejected: Error adding/updating listener(s) main_internal: error adding listener named 'main_internal': does not support socket option                                                                                                    
-connect_originate: error adding listener named 'connect_originate': does not support socket option                                                     
-inner_connect_originate: error adding listener named 'inner_connect_originate': does not support socket option                                         
-outer_connect_originate: error adding listener named 'outer_connect_originate': does not support socket option                                         
-    thread=14                                   
-2026-04-21T07:41:29.398963Z    warning    envoy config external/envoy/source/extensions/config_subscription/grpc/grpc_subscription_impl.cc:138    gRPC 
-config for type.googleapis.com/envoy.config.listener.v3.Listener rejected: Error adding/updating listener(s) main_internal: error adding listener named 'main_internal': does not support socket option                                                                                                       
-connect_originate: error adding listener named 'connect_originate': does not support socket option                                                     
-inner_connect_originate: error adding listener named 'inner_connect_originate': does not support socket option                                         
-outer_connect_originate: error adding listener named 'outer_connect_originate': does not support socket option                                         
-    thread=14                                  
+2026-04-21T07:41:29.398901Z    warning    envoy config external/envoy/source/extensions/config_subscription/grpc/delta_subscription_state.cc:283    delta config for type.googleapis.com/envoy.config.listener.v3.Listener rejected: Error adding/updating listener(s) main_internal: error adding listener named 'main_internal': does not support socket option
+connect_originate: error adding listener named 'connect_originate': does not support socket option
+inner_connect_originate: error adding listener named 'inner_connect_originate': does not support socket option
+outer_connect_originate: error adding listener named 'outer_connect_originate': does not support socket option
+    thread=14
+2026-04-21T07:41:29.398963Z    warning    envoy config external/envoy/source/extensions/config_subscription/grpc/grpc_subscription_impl.cc:138    gRPC
+config for type.googleapis.com/envoy.config.listener.v3.Listener rejected: Error adding/updating listener(s) main_internal: error adding listener named 'main_internal': does not support socket option
+connect_originate: error adding listener named 'connect_originate': does not support socket option
+inner_connect_originate: error adding listener named 'inner_connect_originate': does not support socket option
+outer_connect_originate: error adding listener named 'outer_connect_originate': does not support socket option
+    thread=14
 ```
