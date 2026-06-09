@@ -6,12 +6,12 @@ pilot:
     #PILOT_HTTP10: true
     # Small per-stream window: caps each tenant's in-flight HBONE data (~64 KiB),
     # which is the backpressure lever toward non-flow-controlled (TCP/HTTP1) senders.
-    PILOT_HBONE_INITIAL_STREAM_WINDOW_SIZE: 65535
+    PILOT_HBONE_INITIAL_STREAM_WINDOW_SIZE: "65535"
     # Large per-connection window: gives many multiplexed streams headroom so a few
     # slow tenants don't exhaust the shared window and stall everyone (HOLB). Raised
     # from 262140 to 4 MiB during HOLB testing — predicted stall threshold ~= conn/stream
     # window ratio (~64 streams). Decoupled from the per-stream cap above.
-    PILOT_HBONE_INITIAL_CONNECTION_WINDOW_SIZE: 4194304
+    PILOT_HBONE_INITIAL_CONNECTION_WINDOW_SIZE: "4194304"
     # Cap streams multiplexed per HBONE CONNECT upstream connection. 1 = full
     # per-tunnel isolation (no cross-tenant head-of-line blocking). Requires a
     # patched pilot exposing this flag (stock istio has no equivalent knob), so it

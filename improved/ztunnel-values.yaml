@@ -2,14 +2,8 @@ meshConfig:
   defaultConfig:
     proxyMetadata:
       HTTP2_STREAM_WINDOW_SIZE: "65535"
-      HTTP2_CONNECTION_WINDOW_SIZE: "262140"
+      HTTP2_CONNECTION_WINDOW_SIZE: "4194304"
       HTTP2_FRAME_SIZE: "16384"
-      # One HBONE stream per connection on ztunnel's OUTBOUND pool — no multiplexing,
-      # so a slow stream can't starve others sharing a connection (HOLB isolation).
-      # NB: governs ztunnel-as-client (outbound). Does NOT affect the gateway->ztunnel
-      # ingress hop, where ztunnel is the H/2 server (its server max_concurrent_streams
-      # is hardcoded to 200 in stock ztunnel).
-      POOL_MAX_STREAMS_PER_CONNECTION: "1"
       # Enable TCP_USER_TIMEOUT on ztunnel's sockets (default off in stock ztunnel —
       # "haven't proven this out enough"). Kernel force-closes a connection when sent
       # data stays unacked past ~keepalive_time + retries*interval (~225s), which reaps
