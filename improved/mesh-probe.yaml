@@ -1,0 +1,223 @@
+# =============================================================================
+# mesh-probe — synthetic THROUGHPUT probe for detecting head-of-line blocking
+# =============================================================================
+# Why this shape:
+#   * HOL here is flow-control WINDOW EXHAUSTION on the shared gateway->waypoint
+#     HBONE connection, so we must measure THROUGHPUT of a sized transfer, not
+#     latency of a tiny request (a small response squeaks through residual window).
+#   * The payload (8 MB) is ~32x the 256 KB connection window, so the transfer is
+#     flow-control-bound — exactly what HOL starves.
+#   * The probe enters via the GATEWAY (not pod->service direct) so it rides the
+#     same gateway->waypoint HBONE connection real traffic uses, and shares any
+#     blockage.
+#   * blackbox-exporter is metrics-native (scraped, no logs, no pushgateway).
+#     Throughput is derived in PromQL:
+#       probe_http_uncompressed_body_length / probe_http_duration_seconds{phase="transfer"}
+#     plus probe_success for hard failures (the code-000 case we saw under HOL).
+#
+# Components: namespace | backend (caddy, 8MB file, waypoint-bound) | XListenerSet
+#            (:9998 on the gateway) | TLSRoute | blackbox-exporter + Service.
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mesh-probe
+  labels:
+    istio-discovery: enabled
+---
+# ---- backend: serves a fixed 8 MB file over TLS, accepts any SNI ----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mesh-probe-caddy
+  namespace: mesh-probe
+data:
+  Caddyfile: |
+    :443 {
+        tls internal {
+            on_demand
+        }
+        @fallback {
+            not header_regexp Host .*
+        }
+        root * /data
+        file_server
+        header Content-Type "application/octet-stream"
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mesh-probe-backend
+  namespace: mesh-probe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mesh-probe-backend
+  template:
+    metadata:
+      labels:
+        app: mesh-probe-backend
+        istio.io/dataplane-mode: ambient
+    spec:
+      initContainers:
+        - name: create-payload
+          image: busybox
+          command:
+            ["sh", "-c", "dd if=/dev/urandom of=/data/probe.bin bs=1M count=8"]
+          volumeMounts:
+            - { name: data, mountPath: /data }
+      containers:
+        - name: caddy
+          image: caddy:latest
+          ports:
+            - containerPort: 443
+          resources:
+            requests: { cpu: 25m, memory: 64Mi }
+            limits: { cpu: 200m, memory: 256Mi }
+          volumeMounts:
+            - {
+                name: config,
+                mountPath: /etc/caddy/Caddyfile,
+                subPath: Caddyfile,
+              }
+            - { name: data, mountPath: /data }
+      volumes:
+        - { name: config, configMap: { name: mesh-probe-caddy } }
+        - { name: data, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mesh-probe-backend
+  namespace: mesh-probe
+  labels:
+    # route this service's ingress through the waypoint (same hop that HOL-blocks)
+    istio.io/ingress-use-waypoint: "true"
+    istio.io/use-waypoint: istio-waypoint
+    istio.io/use-waypoint-namespace: istio-waypoint
+spec:
+  selector:
+    app: mesh-probe-backend
+  ports:
+    - protocol: TCP
+      port: 9998
+      targetPort: 443
+  type: ClusterIP
+---
+# ---- expose a :9998 TLS-passthrough listener on the existing gateway ----
+apiVersion: gateway.networking.x-k8s.io/v1alpha1
+kind: XListenerSet
+metadata:
+  name: mesh-probe
+  namespace: mesh-probe
+spec:
+  parentRef:
+    name: istio-gateway
+    namespace: istio-gateway
+    kind: Gateway
+    group: gateway.networking.k8s.io
+  listeners:
+    - name: probe-tls
+      port: 9998
+      protocol: TLS
+      tls:
+        mode: Passthrough
+---
+# NOTE: parentRef targets the XListenerSet (not the Gateway) — the :9998 listener
+# lives on the XListenerSet, so parenting to the Gateway gives NoMatchingParent.
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: mesh-probe
+  namespace: mesh-probe
+spec:
+  parentRefs:
+    - group: gateway.networking.x-k8s.io
+      kind: XListenerSet
+      name: mesh-probe
+      namespace: mesh-probe
+      sectionName: probe-tls
+  rules:
+    - backendRefs:
+        - name: mesh-probe-backend
+          port: 9998
+---
+# ---- blackbox-exporter: probes the gateway, exposes throughput-able metrics ----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blackbox-config
+  namespace: mesh-probe
+data:
+  blackbox.yml: |
+    modules:
+      mesh_throughput:
+        prober: http
+        # timeout = the HOL tripwire: a healthy 8 MB transfer finishes in ~0.3s,
+        # so a 4s ceiling means any stalled/window-starved transfer fails the probe
+        # (probe_success=0) instead of just reporting low throughput. Prometheus
+        # scrape_timeout must be >= this.
+        timeout: 4s
+        http:
+          method: GET
+          valid_status_codes: [200, 206]
+          fail_if_not_ssl: true
+          # Force HTTP/1.1. H2's client-side flow control makes the probe immune to
+          # the buffering HOL (same reason the repro needs curl --http1.1); only an
+          # H1.1 probe is a faithful victim and will show the throughput collapse.
+          enable_http2: false
+          tls_config:
+            insecure_skip_verify: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blackbox-exporter
+  namespace: mesh-probe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blackbox-exporter
+  template:
+    metadata:
+      labels:
+        app: blackbox-exporter
+    spec:
+      containers:
+        - name: blackbox
+          image: prom/blackbox-exporter:v0.25.0
+          args: ["--config.file=/etc/blackbox/blackbox.yml"]
+          ports:
+            - { name: http, containerPort: 9115 }
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { cpu: 100m, memory: 128Mi }
+          volumeMounts:
+            - { name: config, mountPath: /etc/blackbox }
+      volumes:
+        - { name: config, configMap: { name: blackbox-config } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blackbox-exporter
+  namespace: mesh-probe
+spec:
+  selector:
+    app: blackbox-exporter
+  ports:
+    - { name: http, port: 9115, targetPort: 9115 }
+  type: ClusterIP
+# =============================================================================
+# Test (manual, before wiring Sumologic scraping):
+#   kubectl --context andyreef1aks3 apply -f improved/mesh-probe.yaml
+#   kubectl --context andyreef1aks3 -n mesh-probe port-forward svc/blackbox-exporter 9115:9115
+#   TARGET='https://istio-gateway-istio.istio-gateway.svc:9998/probe.bin'
+#   curl -s "http://localhost:9115/probe?module=mesh_throughput&target=$TARGET" \
+#     | grep -E 'probe_success|probe_http_uncompressed_body_length|probe_http_duration_seconds'
+#   # throughput = uncompressed_body_length / probe_http_duration_seconds{phase="transfer"}
+#   # Re-run while slow clients hammer the caddy :9999 path → throughput should collapse.
+# =============================================================================
