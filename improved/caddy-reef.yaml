@@ -1,0 +1,139 @@
+# =============================================================================
+# caddy test backend for a REAL reef (production-style istio-gateway)
+# =============================================================================
+# Difference from improved/caddy-service.yaml (the simple-repro version):
+#   On a real reef the gateway has NO :9999 listener of its own — the listener
+#   is added by the XListenerSet below. So the TLSRoute must parent to the
+#   XListenerSet (group/kind/name), NOT the Gateway. Parenting to the Gateway
+#   gives `Accepted=False (NoMatchingParent)` and traffic falls through to the
+#   gateway's 404 page. That parentRef is the ONLY patch — see the TLSRoute.
+#
+# To reuse for a different backend, it really is just renaming. Change together:
+#   - namespace                      (caddy)
+#   - Service name                   (caddy-service)        + selector app
+#   - XListenerSet name              (caddy)  + listener name (tls-listener) + port (9999)
+#   - TLSRoute parentRef.name/sectionName  → must match the XListenerSet name/listener
+#   - TLSRoute backendRef.name/port  → the Service
+#   - listener port must be free on the gateway and allowed by allowedListeners (from: All)
+# (mesh-probe.yaml is the same pattern with a smaller payload + blackbox prober.)
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: caddy
+  labels:
+    istio-discovery: enabled
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: caddy-service
+  namespace: caddy
+  labels:
+    # send this service's ingress through the waypoint (the HBONE hop under test)
+    istio.io/ingress-use-waypoint: "true"
+    istio.io/use-waypoint: istio-waypoint
+    istio.io/use-waypoint-namespace: istio-waypoint
+spec:
+  selector:
+    app: caddy-server
+  ports:
+    - protocol: TCP
+      port: 9999
+      targetPort: 443
+  type: ClusterIP
+---
+# Adds a :9999 TLS-passthrough listener to the existing production gateway.
+apiVersion: gateway.networking.x-k8s.io/v1alpha1
+kind: XListenerSet
+metadata:
+  name: caddy
+  namespace: caddy
+spec:
+  parentRef:
+    name: istio-gateway
+    namespace: istio-gateway
+    kind: Gateway
+    group: gateway.networking.k8s.io
+  listeners:
+    - name: tls-listener
+      port: 9999
+      protocol: TLS
+      tls:
+        mode: Passthrough
+---
+# THE PATCH: parent to the XListenerSet (where the :9999 listener actually lives),
+# NOT the Gateway. group/kind/name/sectionName must match the XListenerSet above.
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: caddy
+  namespace: caddy
+spec:
+  parentRefs:
+    - group: gateway.networking.x-k8s.io
+      kind: XListenerSet
+      name: caddy
+      namespace: caddy
+      sectionName: tls-listener
+  rules:
+    - backendRefs:
+        - name: caddy-service
+          port: 9999
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config
+  namespace: caddy
+data:
+  Caddyfile: |
+    :443 {
+        tls internal {
+            on_demand
+        }
+        @fallback {
+            not header_regexp Host .*
+        }
+        root * /data
+        file_server
+        header Content-Type "application/octet-stream"
+        log {
+            output stdout
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caddy-payload-server
+  namespace: caddy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: caddy-server
+  template:
+    metadata:
+      labels:
+        app: caddy-server
+        istio.io/dataplane-mode: ambient
+    spec:
+      # 1GB random file for slow-client HOL testing. Shrink count= for a lighter backend.
+      initContainers:
+        - name: create-payload
+          image: busybox
+          command: ["sh", "-c", "dd if=/dev/urandom of=/data/testdata.bin bs=1M count=1000"]
+          volumeMounts:
+            - { name: data-storage, mountPath: /data }
+      containers:
+        - name: caddy
+          image: caddy:latest
+          ports:
+            - containerPort: 443
+          volumeMounts:
+            - { name: config-volume, mountPath: /etc/caddy/Caddyfile, subPath: Caddyfile }
+            - { name: data-storage, mountPath: /data }
+      volumes:
+        - { name: config-volume, configMap: { name: caddy-config } }
+        - { name: data-storage, emptyDir: {} }
