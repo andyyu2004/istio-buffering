@@ -1,0 +1,96 @@
+# In-cluster latency+throughput probe, one per node (DaemonSet), in Python via the uv image.
+# - one process: httpx measures latency (tiny request) + throughput (fixed 10MB range) to the gateway;
+#   prometheus_client serves /metrics on :9100. No sidecar, no image build.
+# - uv runs the script with inline (PEP 723) deps; needs egress to PyPI on startup (see note at bottom).
+# - DaemonSet => one source-path sample per node, labelled by node.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mesh-probe
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: probe-script
+  namespace: mesh-probe
+data:
+  probe.py: |
+    # /// script
+    # requires-python = ">=3.11"
+    # dependencies = ["httpx", "prometheus-client"]
+    # ///
+    import os, time, httpx
+    from prometheus_client import start_http_server, Gauge
+
+    TARGET   = os.environ["TARGET"]                       # must honor Range requests (caddy does)
+    INTERVAL = float(os.environ.get("INTERVAL", "10"))
+    NODE     = os.environ.get("NODE_NAME", "unknown")
+
+    dur = Gauge("probe_duration_seconds", "latency of a tiny request through the mesh", ["node"])
+    ok  = Gauge("probe_success", "1 if last latency probe returned 2xx", ["node"])
+    thr = Gauge("probe_throughput_bytes_per_second", "throughput of a fixed 10MB transfer", ["node"])
+
+    client = httpx.Client(verify=False, timeout=60.0)
+
+    def once():
+        # latency: 1KB range -> catches HOL (window-exhaustion inflates even tiny requests)
+        try:
+            t0 = time.monotonic()
+            r = client.get(TARGET, headers={"Range": "bytes=0-1023"})
+            dur.labels(NODE).set(time.monotonic() - t0)
+            ok.labels(NODE).set(1 if r.status_code < 300 else 0)
+        except Exception:
+            ok.labels(NODE).set(0)
+        # throughput: 10MB range -> catches the leak (collapses while latency stays flat)
+        try:
+            t0 = time.monotonic()
+            r = client.get(TARGET, headers={"Range": "bytes=0-10485759"})
+            elapsed = time.monotonic() - t0
+            thr.labels(NODE).set(len(r.content) / elapsed if elapsed > 0 else 0)
+        except Exception:
+            thr.labels(NODE).set(0)
+
+    if __name__ == "__main__":
+        start_http_server(9100)
+        while True:
+            once()
+            time.sleep(INTERVAL)
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: mesh-probe
+  namespace: mesh-probe
+spec:
+  selector:
+    matchLabels: { app: mesh-probe }
+  template:
+    metadata:
+      labels: { app: mesh-probe }
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: probe
+        image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+        command: ["uv","run","--no-project","/script/probe.py"]
+        env:
+        - name: TARGET
+          value: "https://istio-gateway-istio.istio-gateway.svc:9999/testdata.bin"
+        - name: INTERVAL
+          value: "10"
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+        - { name: HOME,         value: "/tmp" }
+        - { name: UV_CACHE_DIR, value: "/tmp/uv" }
+        ports: [{ containerPort: 9100, name: metrics }]
+        volumeMounts:
+        - { name: script, mountPath: /script }
+        - { name: tmp,    mountPath: /tmp }
+        resources: { requests: { cpu: 20m, memory: 64Mi }, limits: { cpu: 200m, memory: 192Mi } }
+      volumes:
+      - name: script
+        configMap: { name: probe-script }
+      - { name: tmp, emptyDir: {} }
