@@ -19,42 +19,64 @@ data:
     # requires-python = ">=3.11"
     # dependencies = ["httpx", "prometheus-client"]
     # ///
-    import os, time, httpx
-    from prometheus_client import start_http_server, Gauge
+    import os, time, threading, httpx
+    from concurrent.futures import ThreadPoolExecutor
+    from prometheus_client import start_http_server, Histogram, Gauge
 
-    TARGET   = os.environ["TARGET"]                       # must honor Range requests (caddy does)
-    INTERVAL = float(os.environ.get("INTERVAL", "10"))
-    NODE     = os.environ.get("NODE_NAME", "unknown")
+    target              = os.environ["TARGET"]                                # must honor Range requests (caddy does)
+    latency_interval    = float(os.environ.get("LATENCY_INTERVAL", "5"))      # seconds between latency batches
+    throughput_interval = float(os.environ.get("THROUGHPUT_INTERVAL", "15"))  # seconds between throughput batches
+    concurrency         = int(os.environ.get("CONCURRENCY", "5"))             # concurrent probes per batch -> cover >1 pooled HBONE connection
+    node                = os.environ.get("NODE_NAME", "unknown")
 
-    dur = Gauge("probe_duration_seconds", "latency of a tiny request through the mesh", ["node"])
-    ok  = Gauge("probe_success", "1 if last latency probe returned 2xx", ["node"])
-    thr = Gauge("probe_throughput_bytes_per_second", "throughput of a fixed 10MB transfer", ["node"])
+    # Both signals are Histograms so their tails aggregate across nodes AND time -- HOL is per-connection
+    # intermittent, so a single instantaneous sample misses it; the tail over many samples is the signal.
+    # Latency: alert on the HIGH tail (p99). Throughput: alert on the LOW tail (p5/p10) or fraction-below-floor.
+    LATENCY_BUCKETS    = (.005, .01, .025, .05, .1, .25, .5, 1, 2, 5, 10, 20)   # seconds
+    THROUGHPUT_BUCKETS = (1e5, 5e5, 1e6, 5e6, 1e7, 2.5e7, 5e7, 1e8, 2e8)        # bytes/sec
+    duration   = Histogram("probe_duration_seconds", "latency of a tiny request through the mesh", ["node"], buckets=LATENCY_BUCKETS)
+    success    = Gauge("probe_success", "fraction of the last latency batch returning 2xx", ["node"])
+    throughput = Histogram("probe_throughput_bytes_per_second", "throughput of a fixed 2MB transfer through the mesh", ["node"], buckets=THROUGHPUT_BUCKETS)
 
-    client = httpx.Client(verify=False, timeout=60.0)
+    client = httpx.Client(verify=False, timeout=30.0)
 
-    def once():
-        # latency: 1KB range -> catches HOL (window-exhaustion inflates even tiny requests)
+    def measure_latency(_):
+        # tiny 1KB request -> HOL inflates even this; each concurrent call draws a different pooled connection
+        start = time.monotonic()
         try:
-            t0 = time.monotonic()
-            r = client.get(TARGET, headers={"Range": "bytes=0-1023"})
-            dur.labels(NODE).set(time.monotonic() - t0)
-            ok.labels(NODE).set(1 if r.status_code < 300 else 0)
+            response = client.get(target, headers={"Range": "bytes=0-1023"})
+            duration.labels(node).observe(time.monotonic() - start)
+            return 1 if response.status_code < 300 else 0
         except Exception:
-            ok.labels(NODE).set(0)
-        # throughput: 10MB range -> catches the leak (collapses while latency stays flat)
+            duration.labels(node).observe(time.monotonic() - start)
+            return 0
+
+    def latency_loop(pool):
+        while True:
+            results = list(pool.map(measure_latency, range(concurrency)))   # concurrent -> spread across the HBONE connection pool
+            success.labels(node).set(sum(results) / len(results) if results else 0)
+            time.sleep(latency_interval)
+
+    def measure_throughput(_):
+        # fixed 2MB transfer (spans many RTTs, enough to measure rate); concurrent calls draw different connections.
+        # a failed/timed-out transfer records 0 -> lands in the lowest bucket, correctly counted as collapsed.
+        start = time.monotonic()
         try:
-            t0 = time.monotonic()
-            r = client.get(TARGET, headers={"Range": "bytes=0-10485759"})
-            elapsed = time.monotonic() - t0
-            thr.labels(NODE).set(len(r.content) / elapsed if elapsed > 0 else 0)
+            response = client.get(target, headers={"Range": "bytes=0-2097151"})
+            elapsed = time.monotonic() - start
+            throughput.labels(node).observe(len(response.content) / elapsed if elapsed > 0 else 0)
         except Exception:
-            thr.labels(NODE).set(0)
+            throughput.labels(node).observe(0)
+
+    def throughput_loop(pool):                                              # leak + intermittent-collapse signal (low tail)
+        while True:
+            list(pool.map(measure_throughput, range(concurrency)))          # concurrent -> spread across the connection pool
+            time.sleep(throughput_interval)
 
     if __name__ == "__main__":
         start_http_server(9100)
-        while True:
-            once()
-            time.sleep(INTERVAL)
+        threading.Thread(target=throughput_loop, args=(ThreadPoolExecutor(max_workers=concurrency),), daemon=True).start()
+        latency_loop(ThreadPoolExecutor(max_workers=concurrency))
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -79,8 +101,12 @@ spec:
         env:
         - name: TARGET
           value: "https://istio-gateway-istio.istio-gateway.svc:9999/testdata.bin"
-        - name: INTERVAL
-          value: "10"
+        - name: LATENCY_INTERVAL
+          value: "5"
+        - name: THROUGHPUT_INTERVAL
+          value: "15"
+        - name: CONCURRENCY
+          value: "5"
         - name: NODE_NAME
           valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
         - { name: HOME,         value: "/tmp" }
